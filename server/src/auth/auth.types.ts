@@ -9,6 +9,9 @@ export type PublicUser = {
   weight: number | null;
   height: number | null;
   registrationDate: Date;
+  trainingGoal: string;
+  trainingLevel: string;
+  targetWorkoutDays: number;
 };
 
 export type AuthUser = {

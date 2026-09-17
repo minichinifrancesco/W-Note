@@ -64,6 +64,9 @@ export class AuthController {
       gender?: string | null;
       height?: number | string | null;
       weight?: number | string | null;
+      trainingGoal?: string | null;
+      trainingLevel?: string | null;
+      targetWorkoutDays?: number | string | null;
     },
   ) {
     return this.authService.updateProfile(request.user, body);

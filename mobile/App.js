@@ -53,6 +53,7 @@ import HistoryDetailModal from './modals/HistoryDetailModal';
 import EditHistoryModal from './modals/EditHistoryModal';
 import AddExerciseInSessionModal from './modals/AddExerciseInSessionModal';
 import AddExerciseInTemplateModal from './modals/AddExerciseInTemplateModal';
+import EditCoachProfileModal from './modals/EditCoachProfileModal';
 
 // Components
 import ExerciseDescriptionModal from './components/ExerciseDescriptionModal';
@@ -64,6 +65,14 @@ import {
 
 const parseWorkoutNumber = (value) =>
   parseFloat(String(value || 0).replace(',', '.')) || 0;
+
+const normalizeTargetWorkoutDays = (value) => {
+  const parsed = parseInt(String(value ?? 3), 10);
+
+  if (!Number.isFinite(parsed)) return 3;
+
+  return Math.min(Math.max(parsed, 1), 7);
+};
 
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -142,7 +151,12 @@ const FloatingWorkoutBar = React.memo(function FloatingWorkoutBar({
   formatWorkoutTime,
   onPress,
 }) {
-  if (!activeWorkout || currentScreen === 'activeWorkout' || currentScreen === 'login' || currentScreen === 'editTemplate') {
+  if (
+    !activeWorkout ||
+    currentScreen === 'activeWorkout' ||
+    currentScreen === 'login' ||
+    currentScreen === 'editTemplate'
+  ) {
     return null;
   }
   return (
@@ -170,24 +184,50 @@ const FloatingWorkoutBar = React.memo(function FloatingWorkoutBar({
       }}
       onPress={onPress}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-        <View style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          backgroundColor: '#86B749',
-        }} />
+      <View
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}
+      >
+        <View
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: '#86B749',
+          }}
+        />
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: '#86B749', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: '700',
+              color: '#86B749',
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            }}
+          >
             Allenamento Attivo
           </Text>
-          <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              fontSize: 14,
+              fontWeight: '600',
+              color: isDarkMode ? '#f8fafc' : '#0f172a',
+            }}
+          >
             {activeWorkout.name}
           </Text>
         </View>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#86B749', fontFamily: 'monospace' }}>
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: '700',
+            color: '#86B749',
+            fontFamily: 'monospace',
+          }}
+        >
           {formatWorkoutTime(workoutSeconds)}
         </Text>
         <Ionicons name="chevron-forward" size={16} color="#86B749" />
@@ -225,7 +265,8 @@ function MainApp() {
   const [showCreateWorkout, setShowCreateWorkout] = useState(false);
   const [showViewWorkout, setShowViewWorkout] = useState(false);
   const [showCustomExercise, setShowCustomExercise] = useState(false);
-  const [showRenameCustomExercise, setShowRenameCustomExercise] = useState(false);
+  const [showRenameCustomExercise, setShowRenameCustomExercise] =
+    useState(false);
   const [showRestTimeModal, setShowRestTimeModal] = useState(false);
   const [showAddExerciseInSession, setShowAddExerciseInSession] =
     useState(false);
@@ -235,9 +276,12 @@ function MainApp() {
   const [showHistoryDetailModal, setShowHistoryDetailModal] = useState(false);
   const [showEditHistoryModal, setShowEditHistoryModal] = useState(false);
   const [replaceTargetExerciseId, setReplaceTargetExerciseId] = useState(null);
+  const [showEditCoachProfileModal, setShowEditCoachProfileModal] =
+    useState(false);
 
   // Exercise Description Modal states
-  const [selectedDescriptionExercise, setSelectedDescriptionExercise] = useState(null);
+  const [selectedDescriptionExercise, setSelectedDescriptionExercise] =
+    useState(null);
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
 
   const [selectedWorkout, setSelectedWorkout] = useState(null);
@@ -255,7 +299,8 @@ function MainApp() {
   const [customExerciseName, setCustomExerciseName] = useState('');
   const [customMuscleGroup, setCustomMuscleGroup] = useState('');
   const [customExerciseType, setCustomExerciseType] = useState('weight_reps');
-  const [customExerciseDescription, setCustomExerciseDescription] = useState('');
+  const [customExerciseDescription, setCustomExerciseDescription] =
+    useState('');
 
   const [profileName, setProfileName] = useState('');
   const [profileSurname, setProfileSurname] = useState('');
@@ -264,6 +309,10 @@ function MainApp() {
   const [profileAge, setProfileAge] = useState('');
   const [profileHeight, setProfileHeight] = useState('');
   const [profileWeight, setProfileWeight] = useState('');
+  const [profileTrainingGoal, setProfileTrainingGoal] = useState('GENERALE');
+  const [profileTrainingLevel, setProfileTrainingLevel] =
+    useState('PRINCIPIANTE');
+  const [profileTargetWorkoutDays, setProfileTargetWorkoutDays] = useState('3');
 
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [sets, setSets] = useState('');
@@ -303,7 +352,9 @@ function MainApp() {
         try {
           if (settings.restTimerHaptic) {
             const Haptics = require('expo-haptics');
-            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await Haptics.notificationAsync(
+              Haptics.NotificationFeedbackType.Success,
+            );
           }
         } catch (err) {
           console.log('Haptics feedback error:', err);
@@ -320,7 +371,7 @@ function MainApp() {
             });
             const { sound } = await Audio.Sound.createAsync(
               require('./assets/ping.mp3'),
-              { volume: 1.0 } // Set volume level to 1.0 (maximum output)
+              { volume: 1.0 }, // Set volume level to 1.0 (maximum output)
             );
             await sound.playAsync();
             // Automatically stop the sound after 3 seconds
@@ -371,19 +422,24 @@ function MainApp() {
     return mergeExerciseCatalog(catalog, value);
   };
 
-  const applyServerData = useCallback((serverData, catalog = exercises) => {
-    const nextData = {
-      workouts: Array.isArray(serverData?.workouts) ? serverData.workouts : [],
-      exercises: normalizeExercises(serverData?.exercises, catalog),
-      history: Array.isArray(serverData?.history) ? serverData.history : [],
-      badges: Array.isArray(serverData?.badges) ? serverData.badges : [],
-    };
+  const applyServerData = useCallback(
+    (serverData, catalog = exercises) => {
+      const nextData = {
+        workouts: Array.isArray(serverData?.workouts)
+          ? serverData.workouts
+          : [],
+        exercises: normalizeExercises(serverData?.exercises, catalog),
+        history: Array.isArray(serverData?.history) ? serverData.history : [],
+        badges: Array.isArray(serverData?.badges) ? serverData.badges : [],
+      };
 
-    setWorkouts(nextData.workouts);
-    setExercises(nextData.exercises);
-    setHistory(nextData.history);
-    setBadges(nextData.badges);
-  }, [exercises, normalizeExercises]);
+      setWorkouts(nextData.workouts);
+      setExercises(nextData.exercises);
+      setHistory(nextData.history);
+      setBadges(nextData.badges);
+    },
+    [exercises, normalizeExercises],
+  );
 
   const loadExerciseCatalog = async (token) => {
     try {
@@ -395,7 +451,10 @@ function MainApp() {
       setExercises(safeCatalog);
       return safeCatalog;
     } catch (error) {
-      console.error('Errore caricamento catalogo esercizi:', error.message || error);
+      console.error(
+        'Errore caricamento catalogo esercizi:',
+        error.message || error,
+      );
       return token ? baseExercises : [];
     }
   };
@@ -416,6 +475,9 @@ function MainApp() {
     setProfileAge(targetUser?.age ? String(targetUser.age) : '');
     setProfileHeight(targetUser?.height ? String(targetUser.height) : '');
     setProfileWeight(targetUser?.weight ? String(targetUser.weight) : '');
+    setProfileTrainingGoal(targetUser?.trainingGoal || 'GENERALE');
+    setProfileTrainingLevel(targetUser?.trainingLevel || 'PRINCIPIANTE');
+    setProfileTargetWorkoutDays(String(targetUser?.targetWorkoutDays || 3));
   };
 
   const loadUserData = async (token, catalog = baseExercises) => {
@@ -429,16 +491,22 @@ function MainApp() {
     applyServerData(serverData, catalog);
   };
 
-  const openExerciseDescription = useCallback((exercise) => {
-    if (!exercise) return;
-    const fullExercise = exercises.find(e =>
-      e.id === exercise.exerciseId ||
-      e.id === exercise.id ||
-      (e.name && exercise.name && e.name.toLowerCase().trim() === exercise.name.toLowerCase().trim())
-    );
-    setSelectedDescriptionExercise(fullExercise || exercise);
-    setShowDescriptionModal(true);
-  }, [exercises]);
+  const openExerciseDescription = useCallback(
+    (exercise) => {
+      if (!exercise) return;
+      const fullExercise = exercises.find(
+        (e) =>
+          e.id === exercise.exerciseId ||
+          e.id === exercise.id ||
+          (e.name &&
+            exercise.name &&
+            e.name.toLowerCase().trim() === exercise.name.toLowerCase().trim()),
+      );
+      setSelectedDescriptionExercise(fullExercise || exercise);
+      setShowDescriptionModal(true);
+    },
+    [exercises],
+  );
 
   const handleCloseDescriptionModal = useCallback(() => {
     setShowDescriptionModal(false);
@@ -583,7 +651,7 @@ function MainApp() {
       } else {
         showAuthError(
           'Errore registrazione',
-          error.message || 'Registrazione non riuscita'
+          error.message || 'Registrazione non riuscita',
         );
       }
       return false;
@@ -605,6 +673,9 @@ function MainApp() {
     setProfileAge('');
     setProfileHeight('');
     setProfileWeight('');
+    setProfileTrainingGoal('GENERALE');
+    setProfileTrainingLevel('PRINCIPIANTE');
+    setProfileTargetWorkoutDays('3');
     setWorkouts([]);
     setExercises(baseExercises);
     setHistory([]);
@@ -623,31 +694,37 @@ function MainApp() {
     openTemplateEditor(newWorkout);
   };
 
-  const deleteWorkout = useCallback((id) => {
-    Alert.alert('Conferma', 'Vuoi archiviare questa scheda?', [
-      { text: 'Annulla', style: 'cancel' },
-      {
-        text: 'Archivia',
-        style: 'destructive',
-        onPress: async () => {
-          if (!authToken) {
-            Alert.alert('Errore', 'Effettua il login per archiviare la scheda');
-            return;
-          }
+  const deleteWorkout = useCallback(
+    (id) => {
+      Alert.alert('Conferma', 'Vuoi archiviare questa scheda?', [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: 'Archivia',
+          style: 'destructive',
+          onPress: async () => {
+            if (!authToken) {
+              Alert.alert(
+                'Errore',
+                'Effettua il login per archiviare la scheda',
+              );
+              return;
+            }
 
-          try {
-            const serverData = await archiveWorkoutPlan(authToken, id);
-            applyServerData(serverData);
-          } catch (error) {
-            Alert.alert(
-              'Errore scheda',
-              error.message || 'Archiviazione scheda non riuscita'
-            );
-          }
+            try {
+              const serverData = await archiveWorkoutPlan(authToken, id);
+              applyServerData(serverData);
+            } catch (error) {
+              Alert.alert(
+                'Errore scheda',
+                error.message || 'Archiviazione scheda non riuscita',
+              );
+            }
+          },
         },
-      },
-    ]);
-  }, [authToken, applyServerData]);
+      ]);
+    },
+    [authToken, applyServerData],
+  );
 
   const createCustomExercise = async (override = null) => {
     const nextName = override?.name ?? customExerciseName;
@@ -656,19 +733,20 @@ function MainApp() {
     const nextType = override?.type ?? customExerciseType;
     const nextDescription = override?.description ?? customExerciseDescription;
     const cleanedExName = nextName.trim();
-    const isOnlySpecialChars = /^[-\s!@#$%^&*()_+={}\[\]|\\:;"'<>,.?\/~`]+$/.test(cleanedExName);
+    const isOnlySpecialChars =
+      /^[-\s!@#$%^&*()_+={}\[\]|\\:;"'<>,.?\/~`]+$/.test(cleanedExName);
 
     if (!cleanedExName || !nextMuscleGroup.trim()) {
       Alert.alert(
         'Errore',
-        'Compila nome esercizio e scegli il gruppo muscolare'
+        'Compila nome esercizio e scegli il gruppo muscolare',
       );
       return;
     }
     if (isOnlySpecialChars) {
       Alert.alert(
         'Errore',
-        'Il nome dell\'esercizio non può contenere solo caratteri speciali o trattini'
+        "Il nome dell'esercizio non può contenere solo caratteri speciali o trattini",
       );
       return;
     }
@@ -691,7 +769,8 @@ function MainApp() {
         {
           ...savedExercise,
           equipmentType: savedExercise.equipmentType || nextEquipmentType,
-          description: (savedExercise.description ?? nextDescription.trim()) || '',
+          description:
+            (savedExercise.description ?? nextDescription.trim()) || '',
         },
       ]);
       setCustomExerciseName('');
@@ -702,7 +781,7 @@ function MainApp() {
     } catch (error) {
       Alert.alert(
         'Errore esercizio',
-        error.message || 'Creazione esercizio non riuscita'
+        error.message || 'Creazione esercizio non riuscita',
       );
     }
   };
@@ -713,51 +792,61 @@ function MainApp() {
     setShowRenameCustomExercise(true);
   }, []);
 
-  const renameCustomExercise = useCallback(async (nextName) => {
-    const cleanedExName = String(nextName || '').trim();
-    const isOnlySpecialChars = /^[-\s!@#$%^&*()_+={}\[\]|\\:;"'<>,.?\/~`]+$/.test(cleanedExName);
+  const renameCustomExercise = useCallback(
+    async (nextName) => {
+      const cleanedExName = String(nextName || '').trim();
+      const isOnlySpecialChars =
+        /^[-\s!@#$%^&*()_+={}\[\]|\\:;"'<>,.?\/~`]+$/.test(cleanedExName);
 
-    if (!renamingCustomExercise?.id) {
-      setShowRenameCustomExercise(false);
-      return;
-    }
+      if (!renamingCustomExercise?.id) {
+        setShowRenameCustomExercise(false);
+        return;
+      }
 
-    if (!cleanedExName) {
-      Alert.alert('Errore', 'Inserisci il nuovo nome dell\'esercizio');
-      return;
-    }
+      if (!cleanedExName) {
+        Alert.alert('Errore', "Inserisci il nuovo nome dell'esercizio");
+        return;
+      }
 
-    if (isOnlySpecialChars) {
-      Alert.alert(
-        'Errore',
-        'Il nome dell\'esercizio non può contenere solo caratteri speciali o trattini'
-      );
-      return;
-    }
+      if (isOnlySpecialChars) {
+        Alert.alert(
+          'Errore',
+          "Il nome dell'esercizio non può contenere solo caratteri speciali o trattini",
+        );
+        return;
+      }
 
-    if (!authToken) {
-      Alert.alert('Errore', 'Effettua il login per rinominare un esercizio');
-      return;
-    }
+      if (!authToken) {
+        Alert.alert('Errore', 'Effettua il login per rinominare un esercizio');
+        return;
+      }
 
-    try {
-      await updateCustomExerciseRequest(authToken, renamingCustomExercise.id, {
-        name: cleanedExName,
-      });
-      const catalog = await loadExerciseCatalog(authToken);
-      await loadUserData(authToken, catalog);
-      setSelectedDescriptionExercise((prev) =>
-        prev?.id === renamingCustomExercise.id ? { ...prev, name: cleanedExName } : prev
-      );
-      setRenamingCustomExercise(null);
-      setShowRenameCustomExercise(false);
-    } catch (error) {
-      Alert.alert(
-        'Errore esercizio',
-        error.message || 'Rinomina esercizio non riuscita'
-      );
-    }
-  }, [authToken, renamingCustomExercise, loadExerciseCatalog, loadUserData]);
+      try {
+        await updateCustomExerciseRequest(
+          authToken,
+          renamingCustomExercise.id,
+          {
+            name: cleanedExName,
+          },
+        );
+        const catalog = await loadExerciseCatalog(authToken);
+        await loadUserData(authToken, catalog);
+        setSelectedDescriptionExercise((prev) =>
+          prev?.id === renamingCustomExercise.id
+            ? { ...prev, name: cleanedExName }
+            : prev,
+        );
+        setRenamingCustomExercise(null);
+        setShowRenameCustomExercise(false);
+      } catch (error) {
+        Alert.alert(
+          'Errore esercizio',
+          error.message || 'Rinomina esercizio non riuscita',
+        );
+      }
+    },
+    [authToken, renamingCustomExercise, loadExerciseCatalog, loadUserData],
+  );
 
   const deleteCustomExercise = async (exerciseId) => {
     if (!authToken) {
@@ -771,7 +860,7 @@ function MainApp() {
     } catch (error) {
       Alert.alert(
         'Errore esercizio',
-        error.message || 'Eliminazione esercizio non riuscita'
+        error.message || 'Eliminazione esercizio non riuscita',
       );
     }
   };
@@ -785,9 +874,9 @@ function MainApp() {
       const setDetails =
         ex.setDetails && ex.setDetails.length > 0
           ? ex.setDetails.map((sd) => ({
-              weight: timed || repsOnly ? 0 : sd.weight ?? ex.weight ?? 0,
-              reps: timed ? 0 : sd.reps ?? ex.reps ?? 0,
-              duration: timed ? sd.duration ?? ex.duration ?? 0 : 0,
+              weight: timed || repsOnly ? 0 : (sd.weight ?? ex.weight ?? 0),
+              reps: timed ? 0 : (sd.reps ?? ex.reps ?? 0),
+              duration: timed ? (sd.duration ?? ex.duration ?? 0) : 0,
               completed: false,
             }))
           : Array.from({ length: ex.sets || 1 }, () => ({
@@ -821,9 +910,9 @@ function MainApp() {
       const existingSetDetails =
         ex.setDetails && ex.setDetails.length > 0
           ? ex.setDetails.map((sd) => ({
-              weight: timed || repsOnly ? 0 : sd.weight ?? ex.weight ?? 0,
-              reps: timed ? 0 : sd.reps ?? ex.reps ?? 0,
-              duration: timed ? sd.duration ?? ex.duration ?? 0 : 0,
+              weight: timed || repsOnly ? 0 : (sd.weight ?? ex.weight ?? 0),
+              reps: timed ? 0 : (sd.reps ?? ex.reps ?? 0),
+              duration: timed ? (sd.duration ?? ex.duration ?? 0) : 0,
               completed: false,
             }))
           : [{ weight: 0, reps: 0, duration: 0, completed: false }];
@@ -847,14 +936,18 @@ function MainApp() {
 
     const cleanedName = (templateWorkout.name || '').trim();
     // Regex matches strings that are only hyphens, punctuation or special characters
-    const isOnlySpecialChars = /^[-\s!@#$%^&*()_+={}\[\]|\\:;"'<>,.?\/~`]+$/.test(cleanedName);
+    const isOnlySpecialChars =
+      /^[-\s!@#$%^&*()_+={}\[\]|\\:;"'<>,.?\/~`]+$/.test(cleanedName);
 
     if (!cleanedName) {
       Alert.alert('Errore', 'Inserisci un nome per la scheda prima di salvare');
       return;
     }
     if (isOnlySpecialChars) {
-      Alert.alert('Errore', 'Il nome della scheda non può contenere solo caratteri speciali o trattini');
+      Alert.alert(
+        'Errore',
+        'Il nome della scheda non può contenere solo caratteri speciali o trattini',
+      );
       return;
     }
 
@@ -903,7 +996,7 @@ function MainApp() {
     } catch (error) {
       Alert.alert(
         'Errore scheda',
-        error.message || 'Salvataggio scheda non riuscito'
+        error.message || 'Salvataggio scheda non riuscito',
       );
     }
   }, [templateWorkout, authToken, applyServerData]);
@@ -930,144 +1023,159 @@ function MainApp() {
     setTimerActive(false);
   }, []);
 
-  const toggleSetComplete = useCallback((exerciseId, setIndex) => {
-    if (!activeWorkout) return;
+  const toggleSetComplete = useCallback(
+    (exerciseId, setIndex) => {
+      if (!activeWorkout) return;
 
-    const targetExercise = activeWorkout.exercises.find(
-      (ex) => ex.id === exerciseId
-    );
-    const targetSet = targetExercise?.setDetails?.[setIndex];
-    if (!targetExercise || !targetSet) return;
+      const targetExercise = activeWorkout.exercises.find(
+        (ex) => ex.id === exerciseId,
+      );
+      const targetSet = targetExercise?.setDetails?.[setIndex];
+      if (!targetExercise || !targetSet) return;
 
-    const willComplete = !targetSet.completed;
+      const willComplete = !targetSet.completed;
 
-    const performToggle = () => {
-      const updatedWorkout = {
-        ...activeWorkout,
-        exercises: activeWorkout.exercises.map((ex) => {
-          if (ex.id !== exerciseId) return ex;
-          return {
-            ...ex,
-            setDetails: ex.setDetails.map((sd, idx) => {
-              if (idx !== setIndex) return sd;
-              const nextCompleted = !sd.completed;
-              let isPr = false;
+      const performToggle = () => {
+        const updatedWorkout = {
+          ...activeWorkout,
+          exercises: activeWorkout.exercises.map((ex) => {
+            if (ex.id !== exerciseId) return ex;
+            return {
+              ...ex,
+              setDetails: ex.setDetails.map((sd, idx) => {
+                if (idx !== setIndex) return sd;
+                const nextCompleted = !sd.completed;
+                let isPr = false;
 
-              if (nextCompleted) {
-                const exType = ex.type || 'weight_reps';
-                const repsOnly = exType === 'reps';
-                const timed = exType === 'timed';
+                if (nextCompleted) {
+                  const exType = ex.type || 'weight_reps';
+                  const repsOnly = exType === 'reps';
+                  const timed = exType === 'timed';
 
-                const histBest = getHistoricalBestForExercise(history, ex);
-                const currentWeight = Number(sd.weight) || 0;
-                const currentReps = Number(sd.reps) || 0;
+                  const histBest = getHistoricalBestForExercise(history, ex);
+                  const currentWeight = Number(sd.weight) || 0;
+                  const currentReps = Number(sd.reps) || 0;
 
-                let currentSessionMaxWeight = 0;
-                let currentSessionMaxReps = 0;
+                  let currentSessionMaxWeight = 0;
+                  let currentSessionMaxReps = 0;
 
-                ex.setDetails.forEach((s, sIdx) => {
-                  if (s.completed && sIdx !== setIndex) {
-                    if (Number(s.weight) > currentSessionMaxWeight) currentSessionMaxWeight = Number(s.weight);
-                    if (Number(s.reps) > currentSessionMaxReps) currentSessionMaxReps = Number(s.reps);
-                  }
-                });
-
-                const thresholdWeight = Math.max(histBest.maxWeight || 0, currentSessionMaxWeight);
-                const thresholdReps = Math.max(histBest.maxReps || 0, currentSessionMaxReps);
-
-                if (!timed) {
-                  if (repsOnly) {
-                    if (currentReps > 0 && currentReps > thresholdReps) {
-                      isPr = true;
+                  ex.setDetails.forEach((s, sIdx) => {
+                    if (s.completed && sIdx !== setIndex) {
+                      if (Number(s.weight) > currentSessionMaxWeight)
+                        currentSessionMaxWeight = Number(s.weight);
+                      if (Number(s.reps) > currentSessionMaxReps)
+                        currentSessionMaxReps = Number(s.reps);
                     }
-                  } else {
-                    if ((currentWeight > 0 && currentWeight > thresholdWeight) || (currentReps > 0 && currentReps > thresholdReps)) {
-                      isPr = true;
+                  });
+
+                  const thresholdWeight = Math.max(
+                    histBest.maxWeight || 0,
+                    currentSessionMaxWeight,
+                  );
+                  const thresholdReps = Math.max(
+                    histBest.maxReps || 0,
+                    currentSessionMaxReps,
+                  );
+
+                  if (!timed) {
+                    if (repsOnly) {
+                      if (currentReps > 0 && currentReps > thresholdReps) {
+                        isPr = true;
+                      }
+                    } else {
+                      if (
+                        (currentWeight > 0 &&
+                          currentWeight > thresholdWeight) ||
+                        (currentReps > 0 && currentReps > thresholdReps)
+                      ) {
+                        isPr = true;
+                      }
                     }
                   }
                 }
-              }
 
-              return { ...sd, completed: nextCompleted, isPr };
-            }),
-          };
-        }),
+                return { ...sd, completed: nextCompleted, isPr };
+              }),
+            };
+          }),
+        };
+
+        setActiveWorkout(updatedWorkout);
+
+        if (willComplete) {
+          startRestTimer(targetExercise.restTime || 60);
+        }
       };
 
-      setActiveWorkout(updatedWorkout);
-
       if (willComplete) {
-        startRestTimer(targetExercise.restTime || 60);
-      }
-    };
-
-    if (willComplete) {
-      // Check for anomalous values (value >= 3x previous set/log)
-      let prevSet = null;
-      if (setIndex > 0) {
-        prevSet = targetExercise.setDetails[setIndex - 1];
-      } else if (history && history.length > 0) {
-        for (const record of history) {
-          const histEx = record.exercises?.find((e) => exerciseMatches(e, targetExercise));
-          if (histEx && histEx.setDetails && histEx.setDetails.length > 0) {
-            const completedSets = histEx.setDetails.filter((s) => s.completed);
-            if (completedSets.length > 0) {
-              prevSet = completedSets[completedSets.length - 1];
-              break;
+        // Check for anomalous values (value >= 3x previous set/log)
+        let prevSet = null;
+        if (setIndex > 0) {
+          prevSet = targetExercise.setDetails[setIndex - 1];
+        } else if (history && history.length > 0) {
+          for (const record of history) {
+            const histEx = record.exercises?.find((e) =>
+              exerciseMatches(e, targetExercise),
+            );
+            if (histEx && histEx.setDetails && histEx.setDetails.length > 0) {
+              const completedSets = histEx.setDetails.filter(
+                (s) => s.completed,
+              );
+              if (completedSets.length > 0) {
+                prevSet = completedSets[completedSets.length - 1];
+                break;
+              }
             }
           }
         }
-      }
 
-      const exType = targetExercise.type || 'weight_reps';
-      const timed = exType === 'timed';
-      const repsOnly = exType === 'reps';
+        const exType = targetExercise.type || 'weight_reps';
+        const timed = exType === 'timed';
+        const repsOnly = exType === 'reps';
 
-      let isAnomalous = false;
-      let alertMsg = '';
+        let isAnomalous = false;
+        let alertMsg = '';
 
-      if (prevSet) {
-        if (timed) {
-          const currentDuration = parseWorkoutNumber(targetSet.duration);
-          const prevDuration = parseWorkoutNumber(prevSet.duration);
-          if (prevDuration > 0 && currentDuration >= prevDuration * 3) {
-            isAnomalous = true;
-            alertMsg = `La durata inserita (${currentDuration} min) è molto più alta rispetto a quella precedente (${prevDuration} min). Sei sicuro che sia corretta?`;
-          }
-        } else if (repsOnly) {
-          const currentReps = parseWorkoutNumber(targetSet.reps);
-          const prevReps = parseWorkoutNumber(prevSet.reps);
-          if (prevReps > 0 && currentReps >= prevReps * 3) {
-            isAnomalous = true;
-            alertMsg = `Le ripetizioni inserite (${currentReps}) sono molto più alte rispetto a quelle precedenti (${prevReps}). Sei sicuro che siano corrette?`;
-          }
-        } else {
-          const currentWeight = parseWorkoutNumber(targetSet.weight);
-          const prevWeight = parseWorkoutNumber(prevSet.weight);
-          const currentReps = Number(targetSet.reps) || 0;
-          const prevReps = Number(prevSet.reps) || 0;
+        if (prevSet) {
+          if (timed) {
+            const currentDuration = parseWorkoutNumber(targetSet.duration);
+            const prevDuration = parseWorkoutNumber(prevSet.duration);
+            if (prevDuration > 0 && currentDuration >= prevDuration * 3) {
+              isAnomalous = true;
+              alertMsg = `La durata inserita (${currentDuration} min) è molto più alta rispetto a quella precedente (${prevDuration} min). Sei sicuro che sia corretta?`;
+            }
+          } else if (repsOnly) {
+            const currentReps = parseWorkoutNumber(targetSet.reps);
+            const prevReps = parseWorkoutNumber(prevSet.reps);
+            if (prevReps > 0 && currentReps >= prevReps * 3) {
+              isAnomalous = true;
+              alertMsg = `Le ripetizioni inserite (${currentReps}) sono molto più alte rispetto a quelle precedenti (${prevReps}). Sei sicuro che siano corrette?`;
+            }
+          } else {
+            const currentWeight = parseWorkoutNumber(targetSet.weight);
+            const prevWeight = parseWorkoutNumber(prevSet.weight);
+            const currentReps = Number(targetSet.reps) || 0;
+            const prevReps = Number(prevSet.reps) || 0;
 
-          const weightAnomalous = prevWeight > 0 && currentWeight >= prevWeight * 3;
-          const repsAnomalous = prevReps > 0 && currentReps >= prevReps * 3;
+            const weightAnomalous =
+              prevWeight > 0 && currentWeight >= prevWeight * 3;
+            const repsAnomalous = prevReps > 0 && currentReps >= prevReps * 3;
 
-          if (weightAnomalous && repsAnomalous) {
-            isAnomalous = true;
-            alertMsg = `Il peso (${formatWeight(currentWeight)}) e le ripetizioni (${currentReps}) inseriti sono molto più alti rispetto a quelli precedenti (${formatWeight(prevWeight)}, ${prevReps}). Sei sicuro che siano corretti?`;
-          } else if (weightAnomalous) {
-            isAnomalous = true;
-            alertMsg = `Il peso inserito (${formatWeight(currentWeight)}) è molto più alto rispetto a quello precedente (${formatWeight(prevWeight)}). Sei sicuro che sia corretto?`;
-          } else if (repsAnomalous) {
-            isAnomalous = true;
-            alertMsg = `Le ripetizioni inserite (${currentReps}) sono molto più alte rispetto a quelle precedenti (${prevReps}). Sei sicuro che siano corrette?`;
+            if (weightAnomalous && repsAnomalous) {
+              isAnomalous = true;
+              alertMsg = `Il peso (${formatWeight(currentWeight)}) e le ripetizioni (${currentReps}) inseriti sono molto più alti rispetto a quelli precedenti (${formatWeight(prevWeight)}, ${prevReps}). Sei sicuro che siano corretti?`;
+            } else if (weightAnomalous) {
+              isAnomalous = true;
+              alertMsg = `Il peso inserito (${formatWeight(currentWeight)}) è molto più alto rispetto a quello precedente (${formatWeight(prevWeight)}). Sei sicuro che sia corretto?`;
+            } else if (repsAnomalous) {
+              isAnomalous = true;
+              alertMsg = `Le ripetizioni inserite (${currentReps}) sono molto più alte rispetto a quelle precedenti (${prevReps}). Sei sicuro che siano corrette?`;
+            }
           }
         }
-      }
 
-      if (isAnomalous) {
-        Alert.alert(
-          'Valore anomalo',
-          alertMsg,
-          [
+        if (isAnomalous) {
+          Alert.alert('Valore anomalo', alertMsg, [
             {
               text: 'Modifica',
               style: 'cancel',
@@ -1077,137 +1185,170 @@ function MainApp() {
               text: 'Conferma',
               onPress: performToggle,
             },
-          ]
-        );
-        return;
+          ]);
+          return;
+        }
       }
-    }
 
-    performToggle();
-  }, [activeWorkout, formatWeight, history, startRestTimer]);
+      performToggle();
+    },
+    [activeWorkout, formatWeight, history, startRestTimer],
+  );
 
-  const applySetUpdate = useCallback((exerciseId, setIndex, field, parsedValue) => {
-    setActiveWorkout((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        exercises: prev.exercises.map((ex) => {
-          if (ex.id !== exerciseId) return ex;
-          return {
-            ...ex,
-            setDetails: ex.setDetails.map((sd, idx) => {
-              if (idx !== setIndex) return sd;
-              const updatedSet = { ...sd, [field]: parsedValue };
+  const applySetUpdate = useCallback(
+    (exerciseId, setIndex, field, parsedValue) => {
+      setActiveWorkout((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          exercises: prev.exercises.map((ex) => {
+            if (ex.id !== exerciseId) return ex;
+            return {
+              ...ex,
+              setDetails: ex.setDetails.map((sd, idx) => {
+                if (idx !== setIndex) return sd;
+                const updatedSet = { ...sd, [field]: parsedValue };
 
-              let isPr = sd.isPr || false;
-              if (updatedSet.completed) {
-                const exType = ex.type || 'weight_reps';
-                const repsOnly = exType === 'reps';
-                const timed = exType === 'timed';
+                let isPr = sd.isPr || false;
+                if (updatedSet.completed) {
+                  const exType = ex.type || 'weight_reps';
+                  const repsOnly = exType === 'reps';
+                  const timed = exType === 'timed';
 
-                const histBest = getHistoricalBestForExercise(history, ex);
-                const currentWeight = parseWorkoutNumber(updatedSet.weight);
-                const currentReps = parseWorkoutNumber(updatedSet.reps);
+                  const histBest = getHistoricalBestForExercise(history, ex);
+                  const currentWeight = parseWorkoutNumber(updatedSet.weight);
+                  const currentReps = parseWorkoutNumber(updatedSet.reps);
 
-                let currentSessionMaxWeight = 0;
-                let currentSessionMaxReps = 0;
+                  let currentSessionMaxWeight = 0;
+                  let currentSessionMaxReps = 0;
 
-                ex.setDetails.forEach((s, sIdx) => {
-                  if (s.completed && sIdx !== setIndex) {
-                    if (parseWorkoutNumber(s.weight) > currentSessionMaxWeight) currentSessionMaxWeight = parseWorkoutNumber(s.weight);
-                    if (parseWorkoutNumber(s.reps) > currentSessionMaxReps) currentSessionMaxReps = parseWorkoutNumber(s.reps);
-                  }
-                });
-
-                const thresholdWeight = Math.max(histBest.maxWeight || 0, currentSessionMaxWeight);
-                const thresholdReps = Math.max(histBest.maxReps || 0, currentSessionMaxReps);
-
-                isPr = false;
-                if (!timed) {
-                  if (repsOnly) {
-                    if (currentReps > 0 && currentReps > thresholdReps) {
-                      isPr = true;
+                  ex.setDetails.forEach((s, sIdx) => {
+                    if (s.completed && sIdx !== setIndex) {
+                      if (
+                        parseWorkoutNumber(s.weight) > currentSessionMaxWeight
+                      )
+                        currentSessionMaxWeight = parseWorkoutNumber(s.weight);
+                      if (parseWorkoutNumber(s.reps) > currentSessionMaxReps)
+                        currentSessionMaxReps = parseWorkoutNumber(s.reps);
                     }
-                  } else {
-                    if ((currentWeight > 0 && currentWeight > thresholdWeight) || (currentReps > 0 && currentReps > thresholdReps)) {
-                      isPr = true;
+                  });
+
+                  const thresholdWeight = Math.max(
+                    histBest.maxWeight || 0,
+                    currentSessionMaxWeight,
+                  );
+                  const thresholdReps = Math.max(
+                    histBest.maxReps || 0,
+                    currentSessionMaxReps,
+                  );
+
+                  isPr = false;
+                  if (!timed) {
+                    if (repsOnly) {
+                      if (currentReps > 0 && currentReps > thresholdReps) {
+                        isPr = true;
+                      }
+                    } else {
+                      if (
+                        (currentWeight > 0 &&
+                          currentWeight > thresholdWeight) ||
+                        (currentReps > 0 && currentReps > thresholdReps)
+                      ) {
+                        isPr = true;
+                      }
                     }
                   }
+                } else {
+                  isPr = false;
                 }
-              } else {
-                isPr = false;
-              }
 
-              return { ...updatedSet, isPr };
-            }),
-          };
-        }),
-      };
-    });
-  }, [history]);
+                return { ...updatedSet, isPr };
+              }),
+            };
+          }),
+        };
+      });
+    },
+    [history],
+  );
 
-  const updateSetDetail = useCallback((exerciseId, setIndex, field, value) => {
-    applySetUpdate(exerciseId, setIndex, field, value);
-  }, [applySetUpdate]);
+  const updateSetDetail = useCallback(
+    (exerciseId, setIndex, field, value) => {
+      applySetUpdate(exerciseId, setIndex, field, value);
+    },
+    [applySetUpdate],
+  );
 
-  const deleteSetFromExercise = useCallback((exerciseId, setIndex) => {
-    if (!activeWorkout) return;
-    Alert.alert(
-      'Elimina serie',
-      `Sei sicuro di voler eliminare la serie ${setIndex + 1}?`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: () => {
-            setActiveWorkout((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                exercises: prev.exercises.map((ex) => {
-                  if (ex.id !== exerciseId) return ex;
-                  const newSetDetails = ex.setDetails.filter((_, idx) => idx !== setIndex);
-                  return {
-                    ...ex,
-                    setDetails: newSetDetails,
-                    sets: newSetDetails.length,
-                  };
-                }),
-              };
-            });
+  const deleteSetFromExercise = useCallback(
+    (exerciseId, setIndex) => {
+      if (!activeWorkout) return;
+      Alert.alert(
+        'Elimina serie',
+        `Sei sicuro di voler eliminare la serie ${setIndex + 1}?`,
+        [
+          { text: 'Annulla', style: 'cancel' },
+          {
+            text: 'Elimina',
+            style: 'destructive',
+            onPress: () => {
+              setActiveWorkout((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  exercises: prev.exercises.map((ex) => {
+                    if (ex.id !== exerciseId) return ex;
+                    const newSetDetails = ex.setDetails.filter(
+                      (_, idx) => idx !== setIndex,
+                    );
+                    return {
+                      ...ex,
+                      setDetails: newSetDetails,
+                      sets: newSetDetails.length,
+                    };
+                  }),
+                };
+              });
+            },
           },
-        },
-      ]
-    );
-  }, [activeWorkout]);
+        ],
+      );
+    },
+    [activeWorkout],
+  );
 
-  const deleteExerciseFromActiveWorkout = useCallback((exerciseId) => {
-    if (!activeWorkout) return;
-    const targetEx = activeWorkout.exercises.find((ex) => ex.id === exerciseId);
-    const exName = targetEx ? ` "${targetEx.name}"` : "";
-    Alert.alert(
-      'Elimina esercizio',
-      `Sei sicuro di voler eliminare l'esercizio${exName}?`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: () => {
-            setActiveWorkout((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    exercises: prev.exercises.filter((ex) => ex.id !== exerciseId),
-                  }
-                : prev
-            );
+  const deleteExerciseFromActiveWorkout = useCallback(
+    (exerciseId) => {
+      if (!activeWorkout) return;
+      const targetEx = activeWorkout.exercises.find(
+        (ex) => ex.id === exerciseId,
+      );
+      const exName = targetEx ? ` "${targetEx.name}"` : '';
+      Alert.alert(
+        'Elimina esercizio',
+        `Sei sicuro di voler eliminare l'esercizio${exName}?`,
+        [
+          { text: 'Annulla', style: 'cancel' },
+          {
+            text: 'Elimina',
+            style: 'destructive',
+            onPress: () => {
+              setActiveWorkout((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      exercises: prev.exercises.filter(
+                        (ex) => ex.id !== exerciseId,
+                      ),
+                    }
+                  : prev,
+              );
+            },
           },
-        },
-      ]
-    );
-  }, [activeWorkout]);
+        ],
+      );
+    },
+    [activeWorkout],
+  );
 
   const addSetToExercise = useCallback((exerciseId) => {
     setActiveWorkout((prev) => {
@@ -1225,9 +1366,9 @@ function MainApp() {
           // Copy last set values for convenience
           const lastSet = ex.setDetails?.[ex.setDetails.length - 1];
           const newSet = {
-            weight: timed || repsOnly ? 0 : lastSet?.weight ?? 0,
-            reps: timed ? 0 : lastSet?.reps ?? 0,
-            duration: timed ? lastSet?.duration ?? 0 : 0,
+            weight: timed || repsOnly ? 0 : (lastSet?.weight ?? 0),
+            reps: timed ? 0 : (lastSet?.reps ?? 0),
+            duration: timed ? (lastSet?.duration ?? 0) : 0,
             completed: false,
           };
 
@@ -1242,26 +1383,29 @@ function MainApp() {
     });
   }, []);
 
-  const buildExerciseEntry = useCallback((exerciseData, overrideId) => {
-    const exType = exerciseData.type || 'weight_reps';
-    const timed = exType === 'timed';
-    const baseRest = settings.defaultRestTime || 60;
-    const newEx = {
-      id: overrideId ?? Date.now() + Math.random(),
-      exerciseId: exerciseData.id,
-      name: exerciseData.name,
-      muscleGroup: exerciseData.muscleGroup,
-      equipmentType: exerciseData.equipmentType || 'Altro',
-      type: exType,
-      sets: 1,
-      reps: 0,
-      weight: 0,
-      duration: 0,
-      restTime: baseRest,
-      setDetails: [{ weight: 0, reps: 0, duration: 0, completed: false }],
-    };
-    return newEx;
-  }, [settings.defaultRestTime]);
+  const buildExerciseEntry = useCallback(
+    (exerciseData, overrideId) => {
+      const exType = exerciseData.type || 'weight_reps';
+      const timed = exType === 'timed';
+      const baseRest = settings.defaultRestTime || 60;
+      const newEx = {
+        id: overrideId ?? Date.now() + Math.random(),
+        exerciseId: exerciseData.id,
+        name: exerciseData.name,
+        muscleGroup: exerciseData.muscleGroup,
+        equipmentType: exerciseData.equipmentType || 'Altro',
+        type: exType,
+        sets: 1,
+        reps: 0,
+        weight: 0,
+        duration: 0,
+        restTime: baseRest,
+        setDetails: [{ weight: 0, reps: 0, duration: 0, completed: false }],
+      };
+      return newEx;
+    },
+    [settings.defaultRestTime],
+  );
 
   const addExerciseToActiveWorkout = useCallback(() => {
     if (!activeWorkout) return;
@@ -1271,7 +1415,7 @@ function MainApp() {
     }
     const newEx = buildExerciseEntry(sessionSelectedExercise);
     setActiveWorkout((prev) =>
-      prev ? { ...prev, exercises: [...prev.exercises, newEx] } : prev
+      prev ? { ...prev, exercises: [...prev.exercises, newEx] } : prev,
     );
     setShowAddExerciseInSession(false);
     setSessionSelectedExercise(null);
@@ -1282,31 +1426,39 @@ function MainApp() {
     setSessionDuration('');
   }, [activeWorkout, sessionSelectedExercise, buildExerciseEntry]);
 
-  const addMultipleExercisesToActiveWorkout = useCallback((exerciseList) => {
-    if (!activeWorkout || !exerciseList || exerciseList.length === 0) return;
-    const newExercises = exerciseList.map((ex) => buildExerciseEntry(ex));
-    setActiveWorkout((prev) =>
-      prev ? { ...prev, exercises: [...prev.exercises, ...newExercises] } : prev
-    );
-    setShowAddExerciseInSession(false);
-  }, [activeWorkout, buildExerciseEntry]);
+  const addMultipleExercisesToActiveWorkout = useCallback(
+    (exerciseList) => {
+      if (!activeWorkout || !exerciseList || exerciseList.length === 0) return;
+      const newExercises = exerciseList.map((ex) => buildExerciseEntry(ex));
+      setActiveWorkout((prev) =>
+        prev
+          ? { ...prev, exercises: [...prev.exercises, ...newExercises] }
+          : prev,
+      );
+      setShowAddExerciseInSession(false);
+    },
+    [activeWorkout, buildExerciseEntry],
+  );
 
-  const replaceExerciseInActiveWorkout = useCallback((targetId, newExerciseData) => {
-    if (!activeWorkout || !targetId || !newExerciseData) return;
-    const replacement = buildExerciseEntry(newExerciseData, targetId);
-    setActiveWorkout((prev) =>
-      prev
-        ? {
-            ...prev,
-            exercises: prev.exercises.map((ex) =>
-              ex.id === targetId ? replacement : ex
-            ),
-          }
-        : prev
-    );
-    setReplaceTargetExerciseId(null);
-    setShowAddExerciseInSession(false);
-  }, [activeWorkout, buildExerciseEntry]);
+  const replaceExerciseInActiveWorkout = useCallback(
+    (targetId, newExerciseData) => {
+      if (!activeWorkout || !targetId || !newExerciseData) return;
+      const replacement = buildExerciseEntry(newExerciseData, targetId);
+      setActiveWorkout((prev) =>
+        prev
+          ? {
+              ...prev,
+              exercises: prev.exercises.map((ex) =>
+                ex.id === targetId ? replacement : ex,
+              ),
+            }
+          : prev,
+      );
+      setReplaceTargetExerciseId(null);
+      setShowAddExerciseInSession(false);
+    },
+    [activeWorkout, buildExerciseEntry],
+  );
 
   const openRestTimeModal = useCallback((exerciseId, currentRestTime) => {
     setEditingRestExerciseId(exerciseId);
@@ -1326,7 +1478,7 @@ function MainApp() {
         exercises: prev.exercises.map((ex) =>
           ex.id === editingRestExerciseId
             ? { ...ex, restTime: newRestTime }
-            : ex
+            : ex,
         ),
       };
     });
@@ -1336,27 +1488,30 @@ function MainApp() {
     setTempRestTime('');
   }, [activeWorkout, editingRestExerciseId, tempRestTime]);
 
-  const updateTemplateSetDetail = useCallback((exerciseId, setIndex, field, value) => {
-    setTemplateWorkout((prev) => {
-      if (!prev) return prev;
+  const updateTemplateSetDetail = useCallback(
+    (exerciseId, setIndex, field, value) => {
+      setTemplateWorkout((prev) => {
+        if (!prev) return prev;
 
-      return {
-        ...prev,
-        exercises: prev.exercises.map((ex) => {
-          if (ex.id !== exerciseId) return ex;
+        return {
+          ...prev,
+          exercises: prev.exercises.map((ex) => {
+            if (ex.id !== exerciseId) return ex;
 
-          return {
-            ...ex,
-            setDetails: (ex.setDetails || []).map((sd, idx) => {
-              if (idx !== setIndex) return sd;
+            return {
+              ...ex,
+              setDetails: (ex.setDetails || []).map((sd, idx) => {
+                if (idx !== setIndex) return sd;
 
-              return { ...sd, [field]: value };
-            }),
-          };
-        }),
-      };
-    });
-  }, []);
+                return { ...sd, [field]: value };
+              }),
+            };
+          }),
+        };
+      });
+    },
+    [],
+  );
 
   const addSetToTemplateExercise = useCallback((exerciseId) => {
     setTemplateWorkout((prev) => {
@@ -1386,64 +1541,74 @@ function MainApp() {
     });
   }, []);
 
-  const deleteSetFromTemplateExercise = useCallback((exerciseId, setIndex) => {
-    if (!templateWorkout) return;
-    Alert.alert(
-      'Elimina serie',
-      `Sei sicuro di voler eliminare la serie ${setIndex + 1}?`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: () => {
-            setTemplateWorkout((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                exercises: prev.exercises.map((ex) => {
-                  if (ex.id !== exerciseId) return ex;
-                  return {
-                    ...ex,
-                    setDetails: (ex.setDetails || []).filter(
-                      (_, idx) => idx !== setIndex
-                    ),
-                  };
-                }),
-              };
-            });
+  const deleteSetFromTemplateExercise = useCallback(
+    (exerciseId, setIndex) => {
+      if (!templateWorkout) return;
+      Alert.alert(
+        'Elimina serie',
+        `Sei sicuro di voler eliminare la serie ${setIndex + 1}?`,
+        [
+          { text: 'Annulla', style: 'cancel' },
+          {
+            text: 'Elimina',
+            style: 'destructive',
+            onPress: () => {
+              setTemplateWorkout((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  exercises: prev.exercises.map((ex) => {
+                    if (ex.id !== exerciseId) return ex;
+                    return {
+                      ...ex,
+                      setDetails: (ex.setDetails || []).filter(
+                        (_, idx) => idx !== setIndex,
+                      ),
+                    };
+                  }),
+                };
+              });
+            },
           },
-        },
-      ]
-    );
-  }, [templateWorkout]);
+        ],
+      );
+    },
+    [templateWorkout],
+  );
 
-  const deleteExerciseFromTemplate = useCallback((exerciseId) => {
-    if (!templateWorkout) return;
-    const targetEx = templateWorkout.exercises.find((ex) => ex.id === exerciseId);
-    const exName = targetEx ? ` "${targetEx.name}"` : "";
-    Alert.alert(
-      'Elimina esercizio',
-      `Sei sicuro di voler eliminare l'esercizio${exName}?`,
-      [
-        { text: 'Annulla', style: 'cancel' },
-        {
-          text: 'Elimina',
-          style: 'destructive',
-          onPress: () => {
-            setTemplateWorkout((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    exercises: prev.exercises.filter((ex) => ex.id !== exerciseId),
-                  }
-                : prev
-            );
+  const deleteExerciseFromTemplate = useCallback(
+    (exerciseId) => {
+      if (!templateWorkout) return;
+      const targetEx = templateWorkout.exercises.find(
+        (ex) => ex.id === exerciseId,
+      );
+      const exName = targetEx ? ` "${targetEx.name}"` : '';
+      Alert.alert(
+        'Elimina esercizio',
+        `Sei sicuro di voler eliminare l'esercizio${exName}?`,
+        [
+          { text: 'Annulla', style: 'cancel' },
+          {
+            text: 'Elimina',
+            style: 'destructive',
+            onPress: () => {
+              setTemplateWorkout((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      exercises: prev.exercises.filter(
+                        (ex) => ex.id !== exerciseId,
+                      ),
+                    }
+                  : prev,
+              );
+            },
           },
-        },
-      ]
-    );
-  }, [templateWorkout]);
+        ],
+      );
+    },
+    [templateWorkout],
+  );
 
   const addExerciseToTemplate = useCallback(() => {
     if (!templateWorkout || !templateSelectedExercise) {
@@ -1468,7 +1633,7 @@ function MainApp() {
       setDetails: [{ weight: 0, reps: 0, duration: 0, completed: false }],
     };
     setTemplateWorkout((prev) =>
-      prev ? { ...prev, exercises: [...prev.exercises, exercise] } : prev
+      prev ? { ...prev, exercises: [...prev.exercises, exercise] } : prev,
     );
     setTemplateSelectedExercise(null);
     setTemplateSets('');
@@ -1479,31 +1644,37 @@ function MainApp() {
     setShowAddExerciseInTemplate(false);
   }, [templateWorkout, templateSelectedExercise, settings.defaultRestTime]);
 
-  const addMultipleExercisesToTemplate = useCallback((exerciseList) => {
-    if (!templateWorkout || !exerciseList || exerciseList.length === 0) return;
-    const newExercises = exerciseList.map((ex) => {
-      const exType = ex.type || 'weight_reps';
-      const timed = exType === 'timed';
-      return {
-        id: Date.now() + Math.random(),
-        exerciseId: ex.id,
-        name: ex.name,
-        muscleGroup: ex.muscleGroup,
-        equipmentType: ex.equipmentType || 'Altro',
-        type: exType,
-        sets: 1,
-        reps: 0,
-        weight: 0,
-        duration: 0,
-        restTime: settings.defaultRestTime || 60,
-        setDetails: [{ weight: 0, reps: 0, duration: 0, completed: false }],
-      };
-    });
-    setTemplateWorkout((prev) =>
-      prev ? { ...prev, exercises: [...prev.exercises, ...newExercises] } : prev
-    );
-    setShowAddExerciseInTemplate(false);
-  }, [templateWorkout, settings.defaultRestTime]);
+  const addMultipleExercisesToTemplate = useCallback(
+    (exerciseList) => {
+      if (!templateWorkout || !exerciseList || exerciseList.length === 0)
+        return;
+      const newExercises = exerciseList.map((ex) => {
+        const exType = ex.type || 'weight_reps';
+        const timed = exType === 'timed';
+        return {
+          id: Date.now() + Math.random(),
+          exerciseId: ex.id,
+          name: ex.name,
+          muscleGroup: ex.muscleGroup,
+          equipmentType: ex.equipmentType || 'Altro',
+          type: exType,
+          sets: 1,
+          reps: 0,
+          weight: 0,
+          duration: 0,
+          restTime: settings.defaultRestTime || 60,
+          setDetails: [{ weight: 0, reps: 0, duration: 0, completed: false }],
+        };
+      });
+      setTemplateWorkout((prev) =>
+        prev
+          ? { ...prev, exercises: [...prev.exercises, ...newExercises] }
+          : prev,
+      );
+      setShowAddExerciseInTemplate(false);
+    },
+    [templateWorkout, settings.defaultRestTime],
+  );
 
   const finishWorkout = useCallback(async () => {
     if (!activeWorkout) return;
@@ -1536,7 +1707,12 @@ function MainApp() {
 
     const recordId = Date.now();
     const recordDate = new Date().toISOString();
-    const prResult = detectPersonalRecords(normalizedExercises, history, recordDate, recordId);
+    const prResult = detectPersonalRecords(
+      normalizedExercises,
+      history,
+      recordDate,
+      recordId,
+    );
     const earnedBadges = prResult.badges;
 
     const workoutRecord = {
@@ -1566,12 +1742,12 @@ function MainApp() {
         'Completato!',
         earnedBadges.length > 0
           ? `Workout salvato nello storico. Nuovi badge ottenuti: ${earnedBadges.length}`
-          : 'Workout salvato nello storico'
+          : 'Workout salvato nello storico',
       );
     } catch (error) {
       Alert.alert(
         'Errore workout',
-        error.message || 'Salvataggio workout non riuscito'
+        error.message || 'Salvataggio workout non riuscito',
       );
     }
   }, [activeWorkout, history, workoutSeconds, authToken, applyServerData]);
@@ -1591,66 +1767,77 @@ function MainApp() {
     setHistory((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
-  const updateHistorySetDetail = useCallback((exerciseId, setIndex, field, value) => {
-    if (!editingHistoryRecord) return;
+  const updateHistorySetDetail = useCallback(
+    (exerciseId, setIndex, field, value) => {
+      if (!editingHistoryRecord) return;
 
-    setEditingHistoryRecord((prev) => {
-      if (!prev) return prev;
+      setEditingHistoryRecord((prev) => {
+        if (!prev) return prev;
 
-      return {
-        ...prev,
-        exercises: prev.exercises.map((ex) => {
-          if (ex.id !== exerciseId) return ex;
+        return {
+          ...prev,
+          exercises: prev.exercises.map((ex) => {
+            if (ex.id !== exerciseId) return ex;
 
-          return {
-            ...ex,
-            setDetails: ex.setDetails.map((sd, idx) => {
-              if (idx !== setIndex) return sd;
+            return {
+              ...ex,
+              setDetails: ex.setDetails.map((sd, idx) => {
+                if (idx !== setIndex) return sd;
 
-              if (field === 'completed') {
-                return { ...sd, completed: !sd.completed };
-              }
+                if (field === 'completed') {
+                  return { ...sd, completed: !sd.completed };
+                }
 
-              let parsedValue = value;
-              if (field === 'reps' || field === 'duration') {
-                parsedValue = parseInt(value || '0', 10) || 0;
-              }
-              if (field === 'weight') {
-                parsedValue = parseFloat(value || '0') || 0;
-              }
+                let parsedValue = value;
+                if (field === 'reps' || field === 'duration') {
+                  parsedValue = parseInt(value || '0', 10) || 0;
+                }
+                if (field === 'weight') {
+                  parsedValue = parseFloat(value || '0') || 0;
+                }
 
-              return { ...sd, [field]: parsedValue };
-            }),
-          };
-        }),
-      };
-    });
-  }, []);
+                return { ...sd, [field]: parsedValue };
+              }),
+            };
+          }),
+        };
+      });
+    },
+    [],
+  );
 
-  const updateHistoryGeneralNote = useCallback(async (recordId, noteText) => {
-    setHistory((prev) =>
-      prev.map((item) =>
-        item.id === recordId ? { ...item, generalNote: noteText } : item
-      )
-    );
-    if (selectedHistoryRecord && selectedHistoryRecord.id === recordId) {
-      setSelectedHistoryRecord((prev) => prev ? { ...prev, generalNote: noteText } : prev);
-    }
+  const updateHistoryGeneralNote = useCallback(
+    async (recordId, noteText) => {
+      setHistory((prev) =>
+        prev.map((item) =>
+          item.id === recordId ? { ...item, generalNote: noteText } : item,
+        ),
+      );
+      if (selectedHistoryRecord && selectedHistoryRecord.id === recordId) {
+        setSelectedHistoryRecord((prev) =>
+          prev ? { ...prev, generalNote: noteText } : prev,
+        );
+      }
 
-    if (!authToken) return;
-    try {
-      await updateWorkoutNotes(authToken, recordId, noteText);
-    } catch (error) {
-      console.error('Errore salvataggio nota workout:', error.message || error);
-    }
-  }, [selectedHistoryRecord, authToken]);
+      if (!authToken) return;
+      try {
+        await updateWorkoutNotes(authToken, recordId, noteText);
+      } catch (error) {
+        console.error(
+          'Errore salvataggio nota workout:',
+          error.message || error,
+        );
+      }
+    },
+    [selectedHistoryRecord, authToken],
+  );
 
   const saveEditedHistory = useCallback(() => {
     if (!editingHistoryRecord) return;
     setHistory((prev) =>
       prev.map((item) =>
-        item.id === editingHistoryRecord.id ? editingHistoryRecord : item
-      )
+        item.id === editingHistoryRecord.id ? editingHistoryRecord : item,
+      ),
     );
     setShowEditHistoryModal(false);
     setEditingHistoryRecord(null);
@@ -1659,10 +1846,32 @@ function MainApp() {
   const openProfileEdit = useCallback(() => {
     setProfileName(profileName || user?.name || '');
     setProfileGender(normalizeProfileGender(profileGender || user?.gender));
-    setProfileHeight(profileHeight || (user?.height ? String(user.height) : ''));
-    setProfileWeight(profileWeight || (user?.weight ? String(user.weight) : ''));
+    setProfileHeight(
+      profileHeight || (user?.height ? String(user.height) : ''),
+    );
+    setProfileWeight(
+      profileWeight || (user?.weight ? String(user.weight) : ''),
+    );
     setShowEditProfileModal(true);
   }, [profileName, profileGender, profileHeight, profileWeight, user]);
+
+  const openCoachProfileEdit = useCallback(() => {
+    setProfileTrainingGoal(
+      user?.trainingGoal || profileTrainingGoal || 'GENERALE',
+    );
+    setProfileTrainingLevel(
+      user?.trainingLevel || profileTrainingLevel || 'PRINCIPIANTE',
+    );
+    setProfileTargetWorkoutDays(
+      String(user?.targetWorkoutDays || profileTargetWorkoutDays || 3),
+    );
+    setShowEditCoachProfileModal(true);
+  }, [
+    user,
+    profileTrainingGoal,
+    profileTrainingLevel,
+    profileTargetWorkoutDays,
+  ]);
 
   const saveProfile = useCallback(async () => {
     const profile = {
@@ -1685,9 +1894,59 @@ function MainApp() {
       applyUserProfile(updatedUser);
       setShowEditProfileModal(false);
     } catch (error) {
-      Alert.alert('Errore profilo', error.message || 'Salvataggio non riuscito');
+      Alert.alert(
+        'Errore profilo',
+        error.message || 'Salvataggio non riuscito',
+      );
     }
-  }, [user, email, profileName, profileGender, profileHeight, profileWeight, authToken]);
+  }, [
+    user,
+    email,
+    profileName,
+    profileGender,
+    profileHeight,
+    profileWeight,
+    authToken,
+  ]);
+
+  const saveCoachProfile = useCallback(
+    async (coachProfile = {}) => {
+      const profile = {
+        trainingGoal: coachProfile.trainingGoal ?? profileTrainingGoal,
+        trainingLevel: coachProfile.trainingLevel ?? profileTrainingLevel,
+        targetWorkoutDays: normalizeTargetWorkoutDays(
+          coachProfile.targetWorkoutDays ?? profileTargetWorkoutDays,
+        ),
+      };
+
+      try {
+        const response = authToken
+          ? await updateProfile(authToken, profile)
+          : null;
+        const updatedUser = response?.user || {
+          ...(user || {}),
+          email: user?.email || email,
+          ...profile,
+        };
+        setUser(updatedUser);
+        applyUserProfile(updatedUser);
+        setShowEditCoachProfileModal(false);
+      } catch (error) {
+        Alert.alert(
+          'Errore profilo coach',
+          error.message || 'Salvataggio non riuscito',
+        );
+      }
+    },
+    [
+      user,
+      email,
+      profileTrainingGoal,
+      profileTrainingLevel,
+      profileTargetWorkoutDays,
+      authToken,
+    ],
+  );
 
   // Memoized grouped exercises — avoids re-iterating 200+ exercises on every render
   const groupExercisesByMuscle = useMemo(() => {
@@ -1701,12 +1960,15 @@ function MainApp() {
 
   const activeWorkouts = useMemo(
     () => workouts.filter((workout) => workout.active !== false),
-    [workouts]
+    [workouts],
   );
 
   return (
     <>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={styles.header.backgroundColor} />
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={styles.header.backgroundColor}
+      />
       {currentScreen === 'login' && (
         <LoginScreen
           email={email}
@@ -1735,7 +1997,7 @@ function MainApp() {
         />
       )}
       {currentScreen === 'coach' && (
-        <CoachScreen 
+        <CoachScreen
           authToken={authToken}
           currentScreen={currentScreen}
           setCurrentScreen={setCurrentScreen}
@@ -1829,7 +2091,11 @@ function MainApp() {
           profileAge={profileAge}
           profileHeight={profileHeight}
           profileWeight={profileWeight}
+          profileTrainingGoal={profileTrainingGoal}
+          profileTrainingLevel={profileTrainingLevel}
+          profileTargetWorkoutDays={profileTargetWorkoutDays}
           openProfileEdit={openProfileEdit}
+          openCoachProfileEdit={openCoachProfileEdit}
           history={history}
           workouts={workouts}
           getTotalHours={getTotalHours}
@@ -1897,6 +2163,14 @@ function MainApp() {
         setProfileWeight={setProfileWeight}
         saveProfile={saveProfile}
       />
+      <EditCoachProfileModal
+        visible={showEditCoachProfileModal}
+        onClose={() => setShowEditCoachProfileModal(false)}
+        profileTrainingGoal={profileTrainingGoal}
+        profileTrainingLevel={profileTrainingLevel}
+        profileTargetWorkoutDays={profileTargetWorkoutDays}
+        saveCoachProfile={saveCoachProfile}
+      />
       <HistoryDetailModal
         showHistoryDetailModal={showHistoryDetailModal}
         setShowHistoryDetailModal={setShowHistoryDetailModal}
@@ -1930,7 +2204,9 @@ function MainApp() {
         sessionDuration={sessionDuration}
         setSessionDuration={setSessionDuration}
         addExerciseToActiveWorkout={addExerciseToActiveWorkout}
-        addMultipleExercisesToActiveWorkout={addMultipleExercisesToActiveWorkout}
+        addMultipleExercisesToActiveWorkout={
+          addMultipleExercisesToActiveWorkout
+        }
         replaceExerciseInActiveWorkout={replaceExerciseInActiveWorkout}
         replaceTargetExerciseId={replaceTargetExerciseId}
         setReplaceTargetExerciseId={setReplaceTargetExerciseId}

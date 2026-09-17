@@ -13,10 +13,16 @@ CREATE TABLE users (
   data_registrazione DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  obiettivo_allenamento TEXT NOT NULL DEFAULT 'GENERALE',
+  livello_allenamento TEXT NOT NULL DEFAULT 'PRINCIPIANTE',
+  giorni_target_settimanali INTEGER NOT NULL DEFAULT 3,
 
   CHECK (peso IS NULL OR peso >= 0),
   CHECK (altezza_cm IS NULL OR altezza_cm >= 0),
-  CHECK (genere IN ('MASCHIO', 'FEMMINA', 'NON_SPECIFICATO'))
+  CHECK (genere IN ('MASCHIO', 'FEMMINA', 'NON_SPECIFICATO')),
+  CHECK (obiettivo_allenamento IN ('GENERALE', 'MASSA', 'FORZA', 'DIMAGRIMENTO', 'MANTENIMENTO')),
+  CHECK (livello_allenamento IN ('PRINCIPIANTE', 'INTERMEDIO', 'AVANZATO')),
+  CHECK (giorni_target_settimanali BETWEEN 1 AND 7)
 );
 
 CREATE TABLE password_reset_codes (

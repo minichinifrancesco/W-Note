@@ -8,6 +8,10 @@ import HelpButton from '../components/HelpModal';
 import SettingsModal from '../modals/SettingsModal';
 import BadgesModal from '../modals/BadgesModal';
 import { Ionicons } from '@expo/vector-icons';
+import {
+  getTrainingGoalLabel,
+  getTrainingLevelLabel,
+} from '../constants/coachProfile';
 
 export default function ProfileScreen({
   user,
@@ -18,7 +22,11 @@ export default function ProfileScreen({
   profileAge,
   profileHeight,
   profileWeight,
+  profileTrainingGoal,
+  profileTrainingLevel,
+  profileTargetWorkoutDays,
   openProfileEdit,
+  openCoachProfileEdit,
   history,
   workouts,
   getTotalHours,
@@ -33,6 +41,9 @@ export default function ProfileScreen({
   const styles = getStyles(isDarkMode);
   const [showSettings, setShowSettings] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
+
+  const trainingGoalLabel = getTrainingGoalLabel(profileTrainingGoal);
+  const trainingLevelLabel = getTrainingLevelLabel(profileTrainingLevel);
 
   const totalHours = useMemo(() => getTotalHours(), [history, getTotalHours]);
   const completedSets = useMemo(() => getCompletedSets(), [history, getCompletedSets]);
@@ -167,6 +178,36 @@ export default function ProfileScreen({
             <View style={styles.profileInfoItem}>
               <Text style={styles.profileInfoLabel}>Genere</Text>
               <Text style={styles.profileInfoValue}>{genderLabel}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.profileCard}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, }}>
+            <Text style={styles.sectionTitle}>Profilo Coach</Text>
+            <TouchableOpacity
+              style={styles.profileEditButton}
+              onPress={openCoachProfileEdit}>
+              <Text style={styles.profileEditButtonText}>Modifica</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.profileInfoRow}>
+            <View style={styles.profileInfoItem}>
+              <Text style={styles.profileInfoLabel}>Obiettivo</Text>
+              <Text style={styles.profileInfoValue}>{trainingGoalLabel}</Text>
+            </View>
+            <View style={styles.profileInfoItem}>
+              <Text style={styles.profileInfoLabel}>Livello</Text>
+              <Text style={styles.profileInfoValue}>{trainingLevelLabel}</Text>
+            </View>
+          </View>
+          <View style={styles.profileInfoRow}>
+            <View style={styles.profileInfoItem}>
+              <Text style={styles.profileInfoLabel}>Target</Text>
+              <Text style={styles.profileInfoValue}>
+                {profileTargetWorkoutDays || 3}{' '}
+                {Number(profileTargetWorkoutDays || 3) === 1 ? 'allenamento' : 'allenamenti'}
+              </Text>
             </View>
           </View>
         </View>

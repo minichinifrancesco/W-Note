@@ -35,6 +35,23 @@ const ACCOUNT_ALREADY_EXISTS_ERROR = {
 };
 const DEFAULT_GENDER = 'NON_SPECIFICATO';
 const ALLOWED_GENDERS = new Set(['MASCHIO', 'FEMMINA', 'NON_SPECIFICATO']);
+const DEFAULT_TRAINING_GOAL = 'GENERALE';
+const DEFAULT_TRAINING_LEVEL = 'PRINCIPIANTE';
+const DEFAULT_TARGET_WORKOUT_DAYS = 3;
+
+const ALLOWED_TRAINING_GOALS = new Set([
+  'GENERALE',
+  'MASSA',
+  'FORZA',
+  'DIMAGRIMENTO',
+  'MANTENIMENTO',
+]);
+
+const ALLOWED_TRAINING_LEVELS = new Set([
+  'PRINCIPIANTE',
+  'INTERMEDIO',
+  'AVANZATO',
+]);
 
 type UserRecord = {
   id: number;
@@ -46,6 +63,9 @@ type UserRecord = {
   weight: number | null;
   heightCm: number | null;
   registrationDate: Date;
+  trainingGoal: string;
+  trainingLevel: string;
+  targetWorkoutDays: number;
 };
 
 @Injectable()
@@ -237,21 +257,63 @@ export class AuthService {
       gender?: string | null;
       height?: number | string | null;
       weight?: number | string | null;
+      trainingGoal?: string | null;
+      trainingLevel?: string | null;
+      targetWorkoutDays?: number | string | null;
     },
   ): Promise<{ user: PublicUser }> {
+    const data: {
+      name?: string;
+      surname?: string;
+      gender?: string;
+      heightCm?: number | null;
+      weight?: number | null;
+      trainingGoal?: string;
+      trainingLevel?: string;
+      targetWorkoutDays?: number;
+    } = {};
+
+    if (body.name !== undefined) {
+      data.name = this.normalizeName(body.name, authUser.email);
+    }
+
+    if (body.surname !== undefined) {
+      data.surname = this.normalizeRequiredText(body.surname, 'Cognome');
+    }
+
+    if (body.gender !== undefined) {
+      data.gender = this.normalizeGender(body.gender);
+    }
+
+    if (body.height !== undefined) {
+      data.heightCm = this.toNullableFloat(body.height);
+    }
+
+    if (body.weight !== undefined) {
+      data.weight = this.toNullableFloat(body.weight);
+    }
+
+    if (body.trainingGoal !== undefined) {
+      data.trainingGoal = this.normalizeTrainingGoal(body.trainingGoal);
+    }
+
+    if (body.trainingLevel !== undefined) {
+      data.trainingLevel = this.normalizeTrainingLevel(body.trainingLevel);
+    }
+
+    if (body.targetWorkoutDays !== undefined) {
+      data.targetWorkoutDays = this.normalizeTargetWorkoutDays(
+        body.targetWorkoutDays,
+      );
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('Nessun campo profilo da aggiornare');
+    }
+
     const user = await this.prisma.user.update({
       where: { id: authUser.userId },
-      data: {
-        name: this.normalizeName(body.name, authUser.email),
-        ...(body.surname !== undefined
-          ? { surname: this.normalizeRequiredText(body.surname, 'Cognome') }
-          : {}),
-        ...(body.gender !== undefined
-          ? { gender: this.normalizeGender(body.gender) }
-          : {}),
-        heightCm: this.toNullableFloat(body.height),
-        weight: this.toNullableFloat(body.weight),
-      },
+      data,
     });
 
     return { user: this.toPublicUser(user) };
@@ -476,6 +538,42 @@ export class AuthService {
     return gender;
   }
 
+  private normalizeTrainingGoal(value: string | null | undefined): string {
+    const normalized = (value ?? DEFAULT_TRAINING_GOAL)
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, '_');
+
+    if (!ALLOWED_TRAINING_GOALS.has(normalized)) {
+      throw new BadRequestException('Obiettivo allenamento non valido');
+    }
+
+    return normalized;
+  }
+
+  private normalizeTrainingLevel(value: string | null | undefined): string {
+    const normalized = (value ?? DEFAULT_TRAINING_LEVEL)
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, '_');
+
+    if (!ALLOWED_TRAINING_LEVELS.has(normalized)) {
+      throw new BadRequestException('Livello allenamento non valido');
+    }
+
+    return normalized;
+  }
+
+  private normalizeTargetWorkoutDays(
+    value: number | string | null | undefined,
+  ): number {
+    const parsed = parseInt(String(value ?? DEFAULT_TARGET_WORKOUT_DAYS), 10);
+
+    if (!Number.isFinite(parsed)) return DEFAULT_TARGET_WORKOUT_DAYS;
+
+    return Math.min(Math.max(parsed, 1), 7);
+  }
+
   private validateBirthDate(value: string | Date | null | undefined): Date {
     const birthDate = this.toNullableBirthDate(value);
     if (!birthDate) {
@@ -579,6 +677,9 @@ export class AuthService {
       weight: user.weight,
       height: user.heightCm,
       registrationDate: user.registrationDate,
+      trainingGoal: user.trainingGoal || DEFAULT_TRAINING_GOAL,
+      trainingLevel: user.trainingLevel || DEFAULT_TRAINING_LEVEL,
+      targetWorkoutDays: user.targetWorkoutDays || DEFAULT_TARGET_WORKOUT_DAYS,
     };
   }
 }

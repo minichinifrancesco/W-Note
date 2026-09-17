@@ -24,6 +24,9 @@ describe('AuthService', () => {
     registrationDate: Date;
     createdAt: Date;
     updatedAt: Date;
+    trainingGoal: string;
+    trainingLevel: string;
+    targetWorkoutDays: number;
   };
 
   type TestResetCode = {
@@ -90,6 +93,9 @@ describe('AuthService', () => {
           ...request.data,
           weight: null,
           heightCm: null,
+          trainingGoal: request.data.trainingGoal ?? 'GENERALE',
+          trainingLevel: request.data.trainingLevel ?? 'PRINCIPIANTE',
+          targetWorkoutDays: request.data.targetWorkoutDays ?? 3,
           registrationDate: now,
           createdAt: now,
           updatedAt: now,
@@ -226,6 +232,21 @@ describe('AuthService', () => {
     );
   });
 
+  it('returns default coach profile fields on registration', async () => {
+    const response = await service.register({
+      email: 'coach@example.com',
+      password: 'Secret1!',
+      name: 'Mario',
+      surname: 'Rossi',
+      birthDate: '2000-06-15',
+      gender: 'MASCHIO',
+    });
+
+    expect(response.user.trainingGoal).toBe('GENERALE');
+    expect(response.user.trainingLevel).toBe('PRINCIPIANTE');
+    expect(response.user.targetWorkoutDays).toBe(3);
+  });
+
   it('rejects impossible calendar dates', async () => {
     await expect(
       service.register({
@@ -283,6 +304,38 @@ describe('AuthService', () => {
       },
     });
     expect(users).toHaveLength(0);
+  });
+
+  it('updates coach profile fields without changing personal profile fields', async () => {
+    const user = await createRegisteredUser();
+
+    const response = await service.updateProfile(
+      { userId: user.id, email: user.email },
+      {
+        trainingGoal: 'MASSA',
+        trainingLevel: 'AVANZATO',
+        targetWorkoutDays: 5,
+      },
+    );
+
+    expect(response.user.trainingGoal).toBe('MASSA');
+    expect(response.user.trainingLevel).toBe('AVANZATO');
+    expect(response.user.targetWorkoutDays).toBe(5);
+
+    expect(response.user.name).toBe('Mario');
+    expect(response.user.surname).toBe('Rossi');
+    expect(response.user.gender).toBe('NON_SPECIFICATO');
+  });
+
+  it('rejects empty profile updates', async () => {
+    const user = await createRegisteredUser();
+
+    await expect(
+      service.updateProfile(
+        { userId: user.id, email: user.email },
+        {},
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('sends a reset code for a registered email without storing the plain code', async () => {
@@ -415,5 +468,49 @@ describe('AuthService', () => {
       service.requestPasswordReset('test@example.com'),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
     expect(resetCodes).toHaveLength(0);
+  });
+
+  it('clamps target workout days between 1 and 7', async () => {
+    const user = await createRegisteredUser();
+
+    const tooHigh = await service.updateProfile(
+      { userId: user.id, email: user.email },
+      {
+        targetWorkoutDays: 12,
+      },
+    );
+
+    expect(tooHigh.user.targetWorkoutDays).toBe(7);
+
+    const tooLow = await service.updateProfile(
+      { userId: user.id, email: user.email },
+      {
+        targetWorkoutDays: 0,
+      },
+    );
+
+    expect(tooLow.user.targetWorkoutDays).toBe(1);
+  });
+
+  it('rejects invalid coach profile values', async () => {
+    const user = await createRegisteredUser();
+
+    await expect(
+      service.updateProfile(
+        { userId: user.id, email: user.email },
+        {
+          trainingGoal: 'CARDIO',
+        },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    await expect(
+      service.updateProfile(
+        { userId: user.id, email: user.email },
+        {
+          trainingLevel: 'ESPERTO',
+        },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
