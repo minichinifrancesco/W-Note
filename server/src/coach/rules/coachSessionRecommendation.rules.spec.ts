@@ -109,7 +109,8 @@ describe('buildCoachSessionRecommendation', () => {
 
     expect(result.sessionType).toBe('Full body ipertrofia');
     expect(result.priorities).toEqual([]);
-    expect(result.reasons[1]).toContain('dati sufficienti');
+    expect(result.reasons[1]).toContain('assenza di dati recenti');
+    expect(result.reasons[1]).toContain('Full body ipertrofia');
   });
 
   it('uses the singular form for one completed workout', () => {

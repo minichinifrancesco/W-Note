@@ -137,6 +137,9 @@ export function buildCoachSessionRecommendation({
   const hasMuscleData = hasCompletedSessions && totals.completedSets > 0;
   const priorityGroups = hasMuscleData ? getPriorityGroups(muscleGroups) : [];
   const priorityNames = priorityGroups.map((group) => group.name);
+  const sessionType = hasMuscleData
+    ? getSessionType(profile, priorityGroups)
+    : getInitialSessionType(profile);
 
   const workoutLabel = totals.sessions === 1 ? 'allenamento' : 'allenamenti';
 
@@ -146,7 +149,7 @@ export function buildCoachSessionRecommendation({
 
   if (!hasCompletedSessions) {
     reasons.push(
-      'Non ci sono ancora dati sufficienti: iniziamo con una seduta adatta al tuo profilo.',
+      `In assenza di dati recenti, il tuo profilo indica come punto di partenza: ${sessionType}.`,
     );
   } else if (!hasMuscleData) {
     reasons.push(
@@ -161,10 +164,6 @@ export function buildCoachSessionRecommendation({
       'Nessun gruppo muscolare risulta sotto priorità questa settimana.',
     );
   }
-
-  const sessionType = hasMuscleData
-    ? getSessionType(profile, priorityGroups)
-    : getInitialSessionType(profile);
 
   return {
     title: 'Prossima seduta consigliata',
