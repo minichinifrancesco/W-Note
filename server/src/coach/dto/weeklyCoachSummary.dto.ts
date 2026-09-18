@@ -57,6 +57,7 @@ export class WeeklyCoachSummaryDto {
   badges!: CoachBadgeSummaryDto;
   insights!: CoachInsightDto[];
   nextFocus!: CoachNextFocusDto;
+  recommendedSession!: CoachRecommendedSessionDto;
 }
 
 export class CoachDayDto {
