@@ -1,5 +1,8 @@
 import { CoachMuscleGroupDto } from '../dto/weeklyCoachSummary.dto';
-import { buildCoachSessionRecommendation } from './coachSessionRecommendation.rules';
+import {
+  adaptSessionStructureToWeeklyPace,
+  buildCoachSessionRecommendation,
+} from './coachSessionRecommendation.rules';
 
 function muscle(
   name: string,
@@ -343,5 +346,56 @@ describe('buildCoachSessionRecommendation', () => {
     expect(result.weeklyProgress.status).toBe('TARGET_REACHED');
     expect(result.sessionType).not.toBe('Recupero e mobilità');
     expect(result.reasons[1]).toContain('serie completate');
+  });
+});
+
+describe('adaptSessionStructureToWeeklyPace', () => {
+  const baseStructure =
+    'Inizia con 1-2 esercizi multiarticolari e completa con esercizi complementari.';
+
+  it('keeps the original structure when the user is on track', () => {
+    expect(
+      adaptSessionStructureToWeeklyPace(baseStructure, {
+        status: 'ON_TRACK',
+        expectedSessions: 2,
+        daysRemaining: 3,
+      }),
+    ).toBe(baseStructure);
+  });
+
+  it('adapts the structure without adding volume when the user is behind', () => {
+    const result = adaptSessionStructureToWeeklyPace(baseStructure, {
+      status: 'BEHIND_TARGET',
+      expectedSessions: 3,
+      daysRemaining: 2,
+    });
+
+    expect(result).toContain(baseStructure);
+    expect(result).toContain('2 giorni rimanenti');
+    expect(result).toContain('senza aggiungere serie per compensare');
+  });
+
+  it('reduces accessories when only one day remains', () => {
+    const result = adaptSessionStructureToWeeklyPace(baseStructure, {
+      status: 'BEHIND_TARGET',
+      expectedSessions: 3,
+      daysRemaining: 1,
+    });
+
+    expect(result).toContain('un solo giorno utile');
+    expect(result).toContain('riduci gli accessori');
+    expect(result).toContain(
+      'non tentare di recuperare tutto il volume mancante',
+    );
+  });
+
+  it('does not alter the structure of a completed historical week', () => {
+    expect(
+      adaptSessionStructureToWeeklyPace(baseStructure, {
+        status: 'BEHIND_TARGET',
+        expectedSessions: 4,
+        daysRemaining: 0,
+      }),
+    ).toBe(baseStructure);
   });
 });

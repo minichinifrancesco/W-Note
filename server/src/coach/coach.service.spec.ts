@@ -7,7 +7,7 @@ describe('CoachService', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-09-17T12:00:00'));
+    jest.setSystemTime(new Date('2026-09-20T12:00:00'));
 
     repository = {
       getCoachProfile: jest.fn(),
@@ -157,7 +157,7 @@ describe('CoachService', () => {
     );
 
     expect(result.recommendedSession.reasons[1]).toContain(
-      'in linea con il ritmo settimanale',
+      'sotto il ritmo previsto',
     );
 
     expect(result.recommendedSession.reasons[2]).toContain(
@@ -169,9 +169,9 @@ describe('CoachService', () => {
       completedSessions: 2,
       targetSessions: 4,
       remainingSessions: 2,
-      paceStatus: 'ON_TRACK',
-      expectedSessions: 1,
-      daysRemaining: 4,
+      paceStatus: 'BEHIND_TARGET',
+      expectedSessions: 3,
+      daysRemaining: 1,
     });
 
     expect(result.recommendedSession.guidance).toContain(
@@ -184,6 +184,18 @@ describe('CoachService', () => {
 
     expect(result.recommendedSession.structure).toContain(
       '1-2 esercizi multiarticolari',
+    );
+
+    expect(result.recommendedSession.structure).toContain(
+      'un solo giorno utile',
+    );
+
+    expect(result.recommendedSession.structure).toContain(
+      'riduci gli accessori',
+    );
+
+    expect(result.recommendedSession.structure).toContain(
+      'non tentare di recuperare tutto il volume mancante',
     );
 
     expect(result.recommendedSession.intensity).toContain('90 e 120 secondi');

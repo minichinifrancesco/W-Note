@@ -9,6 +9,7 @@ import { CoachProfile } from '../types/coachProfile.types';
 import { getWeeklyProgress } from './coachWeeklyProgress.rules';
 
 import type {
+  WeeklyPace,
   WeeklyProgress,
   WeeklyProgressStatus,
 } from './coachWeeklyProgress.rules';
@@ -262,6 +263,21 @@ function getSessionIntensity(profile: CoachProfile): string {
   }
 
   return 'Mantieni un’intensità moderata, recupera tra 60 e 120 secondi e conserva un margine tecnico nelle serie.';
+}
+
+export function adaptSessionStructureToWeeklyPace(
+  baseStructure: string,
+  pace: WeeklyPace,
+): string {
+  if (pace.status !== 'BEHIND_TARGET' || pace.daysRemaining === 0) {
+    return baseStructure;
+  }
+
+  if (pace.daysRemaining === 1) {
+    return `${baseStructure} Poiché resta un solo giorno utile, concentra la seduta sulle priorità indicate, riduci gli accessori e non tentare di recuperare tutto il volume mancante.`;
+  }
+
+  return `${baseStructure} Distribuisci il lavoro nei ${pace.daysRemaining} giorni rimanenti, mantenendo il volume previsto per ogni seduta senza aggiungere serie per compensare.`;
 }
 
 export function buildCoachSessionRecommendation({

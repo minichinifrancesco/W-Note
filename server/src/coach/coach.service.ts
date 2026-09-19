@@ -16,7 +16,10 @@ import { buildCoachNextFocus } from './rules/coachNextFocus.rules';
 import { CoachRepository } from './repositories/coach.repository';
 import { buildCoachInsights } from './rules/coachInsights.rules';
 import { getPreviousPeriod, getWeekPeriod } from './utils/coachPeriod.util';
-import { buildCoachSessionRecommendation } from './rules/coachSessionRecommendation.rules';
+import {
+  adaptSessionStructureToWeeklyPace,
+  buildCoachSessionRecommendation,
+} from './rules/coachSessionRecommendation.rules';
 import {
   getWeeklyPace,
   getWeeklyPaceReason,
@@ -113,6 +116,11 @@ export class CoachService {
 
     const weeklyPaceReason = getWeeklyPaceReason(weeklyPace);
 
+    const adjustedStructure = adaptSessionStructureToWeeklyPace(
+      sessionRecommendation.structure,
+      weeklyPace,
+    );
+
     const recommendationReasons = weeklyPaceReason
       ? [
           sessionRecommendation.reasons[0],
@@ -124,6 +132,7 @@ export class CoachService {
     const recommendedSession: CoachRecommendedSessionDto = {
       ...sessionRecommendation,
       reasons: recommendationReasons,
+      structure: adjustedStructure,
       weeklyProgress: {
         ...sessionRecommendation.weeklyProgress,
         paceStatus: weeklyPace.status,
