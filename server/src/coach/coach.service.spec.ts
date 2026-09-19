@@ -147,7 +147,7 @@ describe('CoachService', () => {
     expect(result.recommendedSession).toEqual(
       expect.objectContaining({
         title: 'Prossima seduta consigliata',
-        sessionType: 'Upper body ipertrofia',
+        sessionType: 'Upper body ipertrofia compatta',
         priorities: ['Schiena', 'Petto', 'Spalle'],
       }),
     );
@@ -178,8 +178,14 @@ describe('CoachService', () => {
       'progressione controllata',
     );
 
-    expect(result.recommendedSession.focus).toBe(
-      'Dorso come priorità principale, con richiamo su Petto e Spalle.',
+    expect(result.recommendedSession.focus).toContain(
+      'Dorso come priorità principale',
+    );
+
+    expect(result.recommendedSession.focus).toContain('Dorso, Petto, Spalle');
+
+    expect(result.recommendedSession.focus).toContain(
+      'senza aggiungere volume non prioritario',
     );
 
     expect(result.recommendedSession.structure).toContain(

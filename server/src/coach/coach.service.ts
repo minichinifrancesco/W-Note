@@ -18,6 +18,7 @@ import { buildCoachInsights } from './rules/coachInsights.rules';
 import { getPreviousPeriod, getWeekPeriod } from './utils/coachPeriod.util';
 import {
   adaptSessionStructureToWeeklyPace,
+  adaptSessionTypeAndFocusToWeeklyPace,
   buildCoachSessionRecommendation,
 } from './rules/coachSessionRecommendation.rules';
 import {
@@ -116,6 +117,14 @@ export class CoachService {
 
     const weeklyPaceReason = getWeeklyPaceReason(weeklyPace);
 
+    const adjustedTypeAndFocus = adaptSessionTypeAndFocusToWeeklyPace(
+      sessionRecommendation.sessionType,
+      sessionRecommendation.focus,
+      sessionRecommendation.priorities,
+      sessionRecommendation.weeklyProgress,
+      weeklyPace,
+    );
+
     const adjustedStructure = adaptSessionStructureToWeeklyPace(
       sessionRecommendation.structure,
       weeklyPace,
@@ -131,6 +140,8 @@ export class CoachService {
 
     const recommendedSession: CoachRecommendedSessionDto = {
       ...sessionRecommendation,
+      sessionType: adjustedTypeAndFocus.sessionType,
+      focus: adjustedTypeAndFocus.focus,
       reasons: recommendationReasons,
       structure: adjustedStructure,
       weeklyProgress: {

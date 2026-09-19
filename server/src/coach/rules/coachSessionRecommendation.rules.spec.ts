@@ -1,6 +1,7 @@
 import { CoachMuscleGroupDto } from '../dto/weeklyCoachSummary.dto';
 import {
   adaptSessionStructureToWeeklyPace,
+  adaptSessionTypeAndFocusToWeeklyPace,
   buildCoachSessionRecommendation,
 } from './coachSessionRecommendation.rules';
 
@@ -346,6 +347,142 @@ describe('buildCoachSessionRecommendation', () => {
     expect(result.weeklyProgress.status).toBe('TARGET_REACHED');
     expect(result.sessionType).not.toBe('Recupero e mobilità');
     expect(result.reasons[1]).toContain('serie completate');
+  });
+});
+
+describe('adaptSessionTypeAndFocusToWeeklyPace', () => {
+  const progress = {
+    status: 'IN_PROGRESS' as const,
+    completedSessions: 2,
+    targetSessions: 4,
+    remainingSessions: 2,
+  };
+
+  it('keeps type and focus when multiple days remain', () => {
+    const result = adaptSessionTypeAndFocusToWeeklyPace(
+      'Upper body ipertrofia',
+      'Dorso come priorità principale.',
+      ['Schiena', 'Petto'],
+      progress,
+      {
+        status: 'BEHIND_TARGET',
+        expectedSessions: 3,
+        daysRemaining: 2,
+      },
+    );
+
+    expect(result).toEqual({
+      sessionType: 'Upper body ipertrofia',
+      focus: 'Dorso come priorità principale.',
+    });
+  });
+
+  it('uses a compact session when one day remains', () => {
+    const result = adaptSessionTypeAndFocusToWeeklyPace(
+      'Upper body ipertrofia',
+      'Dorso come priorità principale, con richiamo su Petto e Spalle.',
+      ['Schiena', 'Petto', 'Spalle'],
+      progress,
+      {
+        status: 'BEHIND_TARGET',
+        expectedSessions: 3,
+        daysRemaining: 1,
+      },
+    );
+
+    expect(result.sessionType).toBe('Upper body ipertrofia compatta');
+    expect(result.focus).toContain(
+      'Dorso come priorità principale, con richiamo su Petto e Spalle.',
+    );
+    expect(result.focus).toContain('Dorso, Petto, Spalle');
+    expect(result.focus).toContain('senza aggiungere volume non prioritario');
+  });
+
+  it('uses an essential full body focus when no priorities are available', () => {
+    const result = adaptSessionTypeAndFocusToWeeklyPace(
+      'Full body guidata',
+      'Copri i tre movimenti principali: gambe, spinta e tirata.',
+      [],
+      {
+        status: 'NOT_STARTED',
+        completedSessions: 0,
+        targetSessions: 2,
+        remainingSessions: 2,
+      },
+      {
+        status: 'BEHIND_TARGET',
+        expectedSessions: 1,
+        daysRemaining: 1,
+      },
+    );
+
+    expect(result.sessionType).toBe('Full body guidata compatta');
+    expect(result.focus).toContain('gambe, spinta e tirata');
+    expect(result.focus).toContain(
+      'limita il lavoro ai movimenti più importanti',
+    );
+  });
+
+  it('does not adapt a completed historical week', () => {
+    const result = adaptSessionTypeAndFocusToWeeklyPace(
+      'Upper body ipertrofia',
+      'Dorso come priorità principale.',
+      ['Schiena'],
+      progress,
+      {
+        status: 'BEHIND_TARGET',
+        expectedSessions: 4,
+        daysRemaining: 0,
+      },
+    );
+
+    expect(result).toEqual({
+      sessionType: 'Upper body ipertrofia',
+      focus: 'Dorso come priorità principale.',
+    });
+  });
+
+  it('does not adapt the recommendation when the user is on track', () => {
+    const result = adaptSessionTypeAndFocusToWeeklyPace(
+      'Upper body ipertrofia',
+      'Dorso come priorità principale.',
+      ['Schiena'],
+      progress,
+      {
+        status: 'ON_TRACK',
+        expectedSessions: 2,
+        daysRemaining: 3,
+      },
+    );
+
+    expect(result).toEqual({
+      sessionType: 'Upper body ipertrofia',
+      focus: 'Dorso come priorità principale.',
+    });
+  });
+
+  it('does not adapt type and focus when pace is not applicable', () => {
+    const result = adaptSessionTypeAndFocusToWeeklyPace(
+      'Recupero e mobilità',
+      'Recupero generale e mobilità.',
+      [],
+      {
+        status: 'TARGET_REACHED',
+        completedSessions: 4,
+        targetSessions: 4,
+        remainingSessions: 0,
+      },
+      {
+        status: 'NOT_APPLICABLE',
+        expectedSessions: 4,
+        daysRemaining: 1,
+      },
+    );
+
+    expect(result).toEqual({
+      sessionType: 'Recupero e mobilità',
+      focus: 'Recupero generale e mobilità.',
+    });
   });
 });
 

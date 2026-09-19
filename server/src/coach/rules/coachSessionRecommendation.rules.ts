@@ -27,6 +27,11 @@ type CoachSessionRecommendationRuleResult = Omit<
   weeklyProgress: WeeklyProgress;
 };
 
+type SessionTypeAndFocus = {
+  sessionType: string;
+  focus: string;
+};
+
 const UPPER_BODY_GROUPS = new Set([
   'Petto',
   'Schiena',
@@ -263,6 +268,79 @@ function getSessionIntensity(profile: CoachProfile): string {
   }
 
   return 'Mantieni un’intensità moderata, recupera tra 60 e 120 secondi e conserva un margine tecnico nelle serie.';
+}
+
+function getCompactSessionType(sessionType: string): string {
+  if (sessionType === 'Upper body ipertrofia') {
+    return 'Upper body ipertrofia compatta';
+  }
+
+  if (sessionType === 'Lower body ipertrofia') {
+    return 'Lower body ipertrofia compatta';
+  }
+
+  if (sessionType === 'Full body ipertrofia') {
+    return 'Full body ipertrofia compatta';
+  }
+
+  if (sessionType === 'Full body forza') {
+    return 'Full body forza compatta';
+  }
+
+  if (sessionType === 'Seduta di forza') {
+    return 'Seduta di forza compatta';
+  }
+
+  if (sessionType === 'Full body metabolica') {
+    return 'Full body metabolica compatta';
+  }
+
+  if (sessionType === 'Full body guidata') {
+    return 'Full body guidata compatta';
+  }
+
+  if (sessionType === 'Seduta bilanciata') {
+    return 'Seduta bilanciata compatta';
+  }
+
+  return sessionType;
+}
+
+export function adaptSessionTypeAndFocusToWeeklyPace(
+  baseSessionType: string,
+  baseFocus: string,
+  priorities: string[],
+  progress: WeeklyProgress,
+  pace: WeeklyPace,
+): SessionTypeAndFocus {
+  const shouldUseCompactSession =
+    pace.status === 'BEHIND_TARGET' &&
+    pace.daysRemaining === 1 &&
+    progress.status !== 'TARGET_REACHED' &&
+    progress.status !== 'ABOVE_TARGET';
+
+  if (!shouldUseCompactSession) {
+    return {
+      sessionType: baseSessionType,
+      focus: baseFocus,
+    };
+  }
+
+  const compactSessionType = getCompactSessionType(baseSessionType);
+
+  if (priorities.length === 0) {
+    return {
+      sessionType: compactSessionType,
+      focus: `${baseFocus} Mantieni la seduta essenziale e limita il lavoro ai movimenti più importanti.`,
+    };
+  }
+
+  const priorityLabel = priorities.map(getFocusGroupLabel).join(', ');
+
+  return {
+    sessionType: compactSessionType,
+    focus: `${baseFocus} Concentra il tempo disponibile su ${priorityLabel}, senza aggiungere volume non prioritario.`,
+  };
 }
 
 export function adaptSessionStructureToWeeklyPace(
