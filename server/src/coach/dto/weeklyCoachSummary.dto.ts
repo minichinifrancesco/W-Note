@@ -1,4 +1,7 @@
-import type { WeeklyProgressStatus } from '../rules/coachWeeklyProgress.rules';
+import type {
+  WeeklyPaceStatus,
+  WeeklyProgressStatus,
+} from '../rules/coachWeeklyProgress.rules';
 
 export type CoachMuscleGroupStatus = 'none' | 'low' | 'ok' | 'high';
 export type CoachInsightSeverity = 'info' | 'success' | 'warning' | 'danger';
@@ -46,6 +49,9 @@ export class CoachWeeklyProgressDto {
   completedSessions!: number;
   targetSessions!: number;
   remainingSessions!: number;
+  paceStatus!: WeeklyPaceStatus;
+  expectedSessions!: number;
+  daysRemaining!: number;
 }
 
 export class CoachRecommendedSessionDto {

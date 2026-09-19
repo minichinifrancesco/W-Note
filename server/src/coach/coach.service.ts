@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { AuthUser } from '../auth/auth.types';
-import { WeeklyCoachSummaryDto } from './dto/weeklyCoachSummary.dto';
+import {
+  CoachRecommendedSessionDto,
+  WeeklyCoachSummaryDto,
+} from './dto/weeklyCoachSummary.dto';
 import {
   toBadgeSummaryDto,
   toComparisonDto,
@@ -14,6 +17,10 @@ import { CoachRepository } from './repositories/coach.repository';
 import { buildCoachInsights } from './rules/coachInsights.rules';
 import { getPreviousPeriod, getWeekPeriod } from './utils/coachPeriod.util';
 import { buildCoachSessionRecommendation } from './rules/coachSessionRecommendation.rules';
+import {
+  getWeeklyPace,
+  getWeeklyPaceReason,
+} from './rules/coachWeeklyProgress.rules';
 import { normalizeCoachProfile } from './types/coachProfile.types';
 
 @Injectable()
@@ -92,11 +99,38 @@ export class CoachService {
     );
     const days = toDayDtos(workoutDayRows, setDayRows);
     const badges = toBadgeSummaryDto(badgeRows);
-    const recommendedSession = buildCoachSessionRecommendation({
+    const sessionRecommendation = buildCoachSessionRecommendation({
       profile: coachProfile,
       totals,
       muscleGroups,
     });
+
+    const weeklyPace = getWeeklyPace(
+      sessionRecommendation.weeklyProgress,
+      period,
+      new Date(),
+    );
+
+    const weeklyPaceReason = getWeeklyPaceReason(weeklyPace);
+
+    const recommendationReasons = weeklyPaceReason
+      ? [
+          sessionRecommendation.reasons[0],
+          weeklyPaceReason,
+          ...sessionRecommendation.reasons.slice(1),
+        ]
+      : sessionRecommendation.reasons;
+
+    const recommendedSession: CoachRecommendedSessionDto = {
+      ...sessionRecommendation,
+      reasons: recommendationReasons,
+      weeklyProgress: {
+        ...sessionRecommendation.weeklyProgress,
+        paceStatus: weeklyPace.status,
+        expectedSessions: weeklyPace.expectedSessions,
+        daysRemaining: weeklyPace.daysRemaining,
+      },
+    };
 
     return {
       period: toPeriodDto(period),

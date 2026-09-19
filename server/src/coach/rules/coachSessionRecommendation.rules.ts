@@ -6,8 +6,10 @@ import {
 
 import { CoachProfile } from '../types/coachProfile.types';
 
-import {
-  getWeeklyProgress,
+import { getWeeklyProgress } from './coachWeeklyProgress.rules';
+
+import type {
+  WeeklyProgress,
   WeeklyProgressStatus,
 } from './coachWeeklyProgress.rules';
 
@@ -15,6 +17,13 @@ type CoachRecommendationContext = {
   profile: CoachProfile;
   totals: CoachTotalsDto;
   muscleGroups: CoachMuscleGroupDto[];
+};
+
+type CoachSessionRecommendationRuleResult = Omit<
+  CoachRecommendedSessionDto,
+  'weeklyProgress'
+> & {
+  weeklyProgress: WeeklyProgress;
 };
 
 const UPPER_BODY_GROUPS = new Set([
@@ -259,7 +268,7 @@ export function buildCoachSessionRecommendation({
   profile,
   totals,
   muscleGroups,
-}: CoachRecommendationContext): CoachRecommendedSessionDto {
+}: CoachRecommendationContext): CoachSessionRecommendationRuleResult {
   const weeklyProgress = getWeeklyProgress(
     totals.sessions,
     profile.targetWorkoutDays,

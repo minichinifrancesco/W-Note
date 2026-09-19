@@ -6,6 +6,9 @@ describe('CoachService', () => {
   let repository: jest.Mocked<CoachRepository>;
 
   beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-09-17T12:00:00'));
+
     repository = {
       getCoachProfile: jest.fn(),
       getWorkoutTotals: jest.fn(),
@@ -18,6 +21,10 @@ describe('CoachService', () => {
     } as unknown as jest.Mocked<CoachRepository>;
 
     service = new CoachService(repository);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('builds the recommended session from the user coach profile', async () => {
@@ -150,6 +157,10 @@ describe('CoachService', () => {
     );
 
     expect(result.recommendedSession.reasons[1]).toContain(
+      'in linea con il ritmo settimanale',
+    );
+
+    expect(result.recommendedSession.reasons[2]).toContain(
       'I gruppi con meno lavoro questa settimana',
     );
 
@@ -158,6 +169,9 @@ describe('CoachService', () => {
       completedSessions: 2,
       targetSessions: 4,
       remainingSessions: 2,
+      paceStatus: 'ON_TRACK',
+      expectedSessions: 1,
+      daysRemaining: 4,
     });
 
     expect(result.recommendedSession.guidance).toContain(
