@@ -25,6 +25,35 @@ export default function CoachRecommendedSessionSection({
     ? recommendation.priorities.filter(Boolean)
     : [];
 
+  const sessionDetails = [
+    {
+      key: "focus",
+      title: "Focus della seduta",
+      icon: "locate-outline",
+      value: recommendation.focus,
+    },
+    {
+      key: "structure",
+      title: "Struttura",
+      icon: "list-outline",
+      value: recommendation.structure,
+    },
+    {
+      key: "intensity",
+      title: "Intensità",
+      icon: "speedometer-outline",
+      value: recommendation.intensity,
+    },
+  ].filter(
+    (detail) =>
+      typeof detail.value === "string" && detail.value.trim().length > 0,
+  );
+
+  const fallbackGuidance =
+    sessionDetails.length === 0 && typeof recommendation.guidance === "string"
+      ? recommendation.guidance
+      : "";
+
   return (
     <View style={styles.workoutCard}>
       <View
@@ -138,7 +167,50 @@ export default function CoachRecommendedSessionSection({
         </View>
       ) : null}
 
-      {recommendation.guidance ? (
+      {sessionDetails.length > 0 ? (
+        <View style={{ marginTop: 16 }}>
+          {sessionDetails.map((detail, index) => (
+            <View
+              key={detail.key}
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-start",
+                gap: 10,
+                paddingTop: 14,
+                paddingBottom: index === sessionDetails.length - 1 ? 0 : 14,
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+              }}
+            >
+              <Ionicons
+                name={detail.icon}
+                size={19}
+                color={colors.primary}
+                style={{ marginTop: 1 }}
+              />
+
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: colors.textDark,
+                    fontSize: 14,
+                    fontWeight: "700",
+                    marginBottom: 4,
+                  }}
+                >
+                  {detail.title}
+                </Text>
+
+                <Text style={getCoachMutedTextStyle(colors)}>
+                  {detail.value}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {fallbackGuidance ? (
         <View
           style={{
             flexDirection: "row",
@@ -166,7 +238,7 @@ export default function CoachRecommendedSessionSection({
               },
             ]}
           >
-            {recommendation.guidance}
+            {fallbackGuidance}
           </Text>
         </View>
       ) : null}

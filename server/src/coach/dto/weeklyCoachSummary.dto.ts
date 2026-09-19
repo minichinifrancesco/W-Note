@@ -45,6 +45,9 @@ export class CoachRecommendedSessionDto {
   reasons!: string[];
   priorities!: string[];
   guidance!: string;
+  focus!: string;
+  structure!: string;
+  intensity!: string;
 }
 
 export class WeeklyCoachSummaryDto {

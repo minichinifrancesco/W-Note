@@ -153,6 +153,20 @@ describe('CoachService', () => {
       'progressione controllata',
     );
 
+    expect(result.recommendedSession.focus).toBe(
+      'Dorso come priorità principale, con richiamo su Petto e Spalle.',
+    );
+
+    expect(result.recommendedSession.structure).toContain(
+      '1-2 esercizi multiarticolari',
+    );
+
+    expect(result.recommendedSession.intensity).toContain('90 e 120 secondi');
+
+    expect(result.recommendedSession.intensity).toContain(
+      '1-3 ripetizioni di margine',
+    );
+
     expect(result.totals).toEqual({
       sessions: 2,
       durationSeconds: 3600,

@@ -128,6 +128,113 @@ function getGuidance(profile: CoachProfile): string {
   return 'Mantieni una progressione controllata e concentrati sulle serie di qualità.';
 }
 
+function getFocusGroupLabel(groupName: string): string {
+  return groupName === 'Schiena' ? 'Dorso' : groupName;
+}
+
+function getSessionFocus(
+  sessionType: string,
+  priorityGroups: CoachMuscleGroupDto[],
+  hasMuscleData: boolean,
+): string {
+  if (!hasMuscleData || sessionType.startsWith('Full body')) {
+    return 'Copri i tre movimenti principali: gambe, spinta e tirata, scegliendo almeno un esercizio per ogni grande distretto.';
+  }
+
+  if (priorityGroups.length === 0) {
+    return 'Mantieni una distribuzione equilibrata tra i principali distretti muscolari.';
+  }
+
+  const [mainPriority, ...secondaryPriorities] = priorityGroups;
+
+  if (
+    mainPriority.status === 'none' &&
+    secondaryPriorities.length > 0 &&
+    secondaryPriorities.every((group) => group.status === 'low')
+  ) {
+    const secondaryNames = secondaryPriorities
+      .map((group) => getFocusGroupLabel(group.name))
+      .join(' e ');
+
+    return `${getFocusGroupLabel(mainPriority.name)} come priorità principale, con richiamo su ${secondaryNames}.`;
+  }
+
+  const priorityNames = new Set(priorityGroups.map((group) => group.name));
+
+  if (priorityNames.has('Petto') && priorityNames.has('Schiena')) {
+    const additionalPriorities = priorityGroups
+      .filter((group) => group.name !== 'Petto' && group.name !== 'Schiena')
+      .map((group) => getFocusGroupLabel(group.name));
+
+    const additionalFocus =
+      additionalPriorities.length > 0
+        ? `, con richiamo su ${additionalPriorities.join(' e ')}`
+        : '';
+
+    return `Alterna movimenti di spinta e tirata per Petto e Dorso${additionalFocus}.`;
+  }
+
+  if (priorityGroups.length === 1) {
+    return `${getFocusGroupLabel(mainPriority.name)} come priorità principale della seduta.`;
+  }
+
+  const secondaryNames = secondaryPriorities
+    .map((group) => getFocusGroupLabel(group.name))
+    .join(' e ');
+
+  return `${getFocusGroupLabel(mainPriority.name)} come priorità principale, con richiamo su ${secondaryNames}.`;
+}
+
+function getSessionStructure(profile: CoachProfile): string {
+  if (profile.trainingLevel === 'PRINCIPIANTE') {
+    return 'Scegli 3-4 esercizi principali. Usa carichi gestibili e movimenti dalla traiettoria stabile, concentrandoti sull’apprendimento tecnico.';
+  }
+
+  if (profile.trainingGoal === 'MASSA') {
+    return 'Inizia con 1-2 esercizi multiarticolari per il focus principale, poi completa la seduta con 2-3 esercizi complementari mirati.';
+  }
+
+  if (
+    profile.trainingGoal === 'FORZA' &&
+    profile.trainingLevel === 'AVANZATO'
+  ) {
+    return 'Concentrati su 1 o 2 sollevamenti fondamentali. Mantieni il lavoro accessorio leggero e orientato alla qualità tecnica.';
+  }
+
+  if (profile.trainingGoal === 'FORZA') {
+    return 'Inizia con un sollevamento principale, poi aggiungi 2-3 esercizi accessori con volume controllato.';
+  }
+
+  if (profile.trainingGoal === 'DIMAGRIMENTO') {
+    return 'Scegli pochi esercizi globali e organizza transizioni efficienti, mantenendo un volume sostenibile per tutta la seduta.';
+  }
+
+  return 'Combina 2-3 movimenti principali con 1-2 esercizi complementari, mantenendo una distribuzione equilibrata.';
+}
+
+function getSessionIntensity(profile: CoachProfile): string {
+  if (
+    profile.trainingLevel === 'PRINCIPIANTE' &&
+    profile.trainingGoal === 'FORZA'
+  ) {
+    return 'Usa carichi gestibili che permettano ripetizioni pulite e lascia 3-4 ripetizioni di margine. Recupera 2-3 minuti sugli esercizi principali ed evita il cedimento.';
+  }
+
+  if (profile.trainingGoal === 'MASSA') {
+    return 'Mantieni uno sforzo medio-alto, con 1-3 ripetizioni di margine nei multiarticolari e recuperi tra 90 e 120 secondi.';
+  }
+
+  if (profile.trainingGoal === 'FORZA') {
+    return 'Usa carichi impegnativi e volume contenuto. Recupera tra 3 e 5 minuti sulle alzate principali ed evita il cedimento.';
+  }
+
+  if (profile.trainingGoal === 'DIMAGRIMENTO') {
+    return 'Mantieni un ritmo sostenuto con recuperi tra 45 e 90 secondi, senza sacrificare tecnica e controllo.';
+  }
+
+  return 'Mantieni un’intensità moderata, recupera tra 60 e 120 secondi e conserva un margine tecnico nelle serie.';
+}
+
 export function buildCoachSessionRecommendation({
   profile,
   totals,
@@ -140,6 +247,9 @@ export function buildCoachSessionRecommendation({
   const sessionType = hasMuscleData
     ? getSessionType(profile, priorityGroups)
     : getInitialSessionType(profile);
+  const focus = getSessionFocus(sessionType, priorityGroups, hasMuscleData);
+  const structure = getSessionStructure(profile);
+  const intensity = getSessionIntensity(profile);
 
   const workoutLabel = totals.sessions === 1 ? 'allenamento' : 'allenamenti';
 
@@ -171,5 +281,8 @@ export function buildCoachSessionRecommendation({
     reasons,
     priorities: priorityNames,
     guidance: getGuidance(profile),
+    focus,
+    structure,
+    intensity,
   };
 }
