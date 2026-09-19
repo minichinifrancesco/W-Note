@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AuthUser } from 'src/auth/auth.types';
+import { AuthUser } from '../auth/auth.types';
 import { WeeklyCoachSummaryDto } from './dto/weeklyCoachSummary.dto';
 import {
   toBadgeSummaryDto,
