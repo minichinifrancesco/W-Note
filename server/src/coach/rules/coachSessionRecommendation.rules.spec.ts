@@ -44,7 +44,9 @@ describe('buildCoachSessionRecommendation', () => {
 
     expect(result.sessionType).toBe('Upper body ipertrofia');
     expect(result.priorities).toEqual(['Schiena', 'Petto', 'Spalle']);
-    expect(result.reasons[0]).toBe('Hai completato 2 allenamenti su 4.');
+    expect(result.reasons[0]).toBe(
+      'Hai completato 2 allenamenti su 4: ne restano 2.',
+    );
     expect(result.focus).toBe(
       'Dorso come priorità principale, con richiamo su Petto e Spalle.',
     );
@@ -138,7 +140,9 @@ describe('buildCoachSessionRecommendation', () => {
       muscleGroups: [muscle('Petto', 'ok', 6)],
     });
 
-    expect(result.reasons[0]).toBe('Hai completato 1 allenamento su 3.');
+    expect(result.reasons[0]).toBe(
+      'Hai completato 1 allenamento su 3: ne restano 2.',
+    );
   });
 
   it('recommends a balanced session for a general balanced profile', () => {
@@ -263,5 +267,81 @@ describe('buildCoachSessionRecommendation', () => {
     expect(result.intensity).toContain('2-3 minuti');
     expect(result.intensity).toContain('evita il cedimento');
     expect(result.intensity).not.toContain('carichi impegnativi');
+  });
+
+  it('recommends recovery when target is reached with balanced work', () => {
+    const result = buildCoachSessionRecommendation({
+      profile: {
+        trainingGoal: 'MASSA',
+        trainingLevel: 'INTERMEDIO',
+        targetWorkoutDays: 4,
+      },
+      totals: { ...totals, sessions: 4 },
+      muscleGroups: [
+        muscle('Petto', 'ok', 6),
+        muscle('Schiena', 'ok', 6),
+        muscle('Gambe e glutei', 'ok', 8),
+      ],
+    });
+
+    expect(result.weeklyProgress.status).toBe('TARGET_REACHED');
+    expect(result.sessionType).toBe('Recupero e mobilità');
+    expect(result.focus).toContain('Recupero generale');
+  });
+
+  it('keeps a targeted recommendation when target is reached but work is unbalanced', () => {
+    const result = buildCoachSessionRecommendation({
+      profile: {
+        trainingGoal: 'MASSA',
+        trainingLevel: 'INTERMEDIO',
+        targetWorkoutDays: 4,
+      },
+      totals: { ...totals, sessions: 4 },
+      muscleGroups: [
+        muscle('Schiena', 'none'),
+        muscle('Gambe e glutei', 'ok', 8),
+      ],
+    });
+
+    expect(result.weeklyProgress.status).toBe('TARGET_REACHED');
+    expect(result.sessionType).not.toBe('Recupero e mobilità');
+    expect(result.priorities).toContain('Schiena');
+  });
+
+  it('recommends recovery above the weekly target', () => {
+    const result = buildCoachSessionRecommendation({
+      profile: {
+        trainingGoal: 'MASSA',
+        trainingLevel: 'INTERMEDIO',
+        targetWorkoutDays: 4,
+      },
+      totals: { ...totals, sessions: 5 },
+      muscleGroups: [muscle('Petto', 'low', 2)],
+    });
+
+    expect(result.weeklyProgress.status).toBe('ABOVE_TARGET');
+    expect(result.sessionType).toBe('Recupero e mobilità');
+    expect(result.intensity).toContain('sforzo leggero');
+  });
+
+  it('does not infer balanced work when target is reached without completed sets', () => {
+    const result = buildCoachSessionRecommendation({
+      profile: {
+        trainingGoal: 'MASSA',
+        trainingLevel: 'INTERMEDIO',
+        targetWorkoutDays: 4,
+      },
+      totals: {
+        ...totals,
+        sessions: 4,
+        completedSets: 0,
+        volume: 0,
+      },
+      muscleGroups: [],
+    });
+
+    expect(result.weeklyProgress.status).toBe('TARGET_REACHED');
+    expect(result.sessionType).not.toBe('Recupero e mobilità');
+    expect(result.reasons[1]).toContain('serie completate');
   });
 });

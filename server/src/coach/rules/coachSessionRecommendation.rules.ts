@@ -6,6 +6,11 @@ import {
 
 import { CoachProfile } from '../types/coachProfile.types';
 
+import {
+  getWeeklyProgress,
+  WeeklyProgressStatus,
+} from './coachWeeklyProgress.rules';
+
 type CoachRecommendationContext = {
   profile: CoachProfile;
   totals: CoachTotalsDto;
@@ -60,6 +65,21 @@ function getPriorityGroups(
       return left.name.localeCompare(right.name, 'it');
     })
     .slice(0, 3);
+}
+
+function getRecoverySessionType(
+  status: WeeklyProgressStatus,
+  hasMuscleData: boolean,
+  priorityGroups: CoachMuscleGroupDto[],
+): string | null {
+  const isBalancedTargetReached =
+    status === 'TARGET_REACHED' && hasMuscleData && priorityGroups.length === 0;
+
+  if (status === 'ABOVE_TARGET' || isBalancedTargetReached) {
+    return 'Recupero e mobilità';
+  }
+
+  return null;
 }
 
 function getInitialSessionType(profile: CoachProfile): string {
@@ -240,22 +260,62 @@ export function buildCoachSessionRecommendation({
   totals,
   muscleGroups,
 }: CoachRecommendationContext): CoachRecommendedSessionDto {
+  const weeklyProgress = getWeeklyProgress(
+    totals.sessions,
+    profile.targetWorkoutDays,
+  );
   const hasCompletedSessions = totals.sessions > 0;
   const hasMuscleData = hasCompletedSessions && totals.completedSets > 0;
   const priorityGroups = hasMuscleData ? getPriorityGroups(muscleGroups) : [];
   const priorityNames = priorityGroups.map((group) => group.name);
-  const sessionType = hasMuscleData
-    ? getSessionType(profile, priorityGroups)
-    : getInitialSessionType(profile);
-  const focus = getSessionFocus(sessionType, priorityGroups, hasMuscleData);
-  const structure = getSessionStructure(profile);
-  const intensity = getSessionIntensity(profile);
+  const recoverySessionType = getRecoverySessionType(
+    weeklyProgress.status,
+    hasMuscleData,
+    priorityGroups,
+  );
+  const sessionType =
+    recoverySessionType ??
+    (hasMuscleData
+      ? getSessionType(profile, priorityGroups)
+      : getInitialSessionType(profile));
+  const isRecoverySession = sessionType === 'Recupero e mobilità';
+  const focus = isRecoverySession
+    ? 'Recupero generale, mobilità e preparazione alla prossima settimana.'
+    : getSessionFocus(sessionType, priorityGroups, hasMuscleData);
 
-  const workoutLabel = totals.sessions === 1 ? 'allenamento' : 'allenamenti';
+  const structure = isRecoverySession
+    ? 'Dedica la seduta a mobilità, respirazione e attività leggera, senza aggiungere volume allenante.'
+    : getSessionStructure(profile);
 
-  const reasons = [
-    `Hai completato ${totals.sessions} ${workoutLabel} su ${profile.targetWorkoutDays}.`,
-  ];
+  const intensity = isRecoverySession
+    ? 'Mantieni uno sforzo leggero e interrompi qualsiasi attività che aumenti affaticamento o dolore.'
+    : getSessionIntensity(profile);
+
+  const completedWorkoutLabel =
+    weeklyProgress.completedSessions === 1 ? 'allenamento' : 'allenamenti';
+
+  const targetWorkoutLabel =
+    weeklyProgress.targetSessions === 1 ? 'allenamento' : 'allenamenti';
+
+  const reasons: string[] = [];
+
+  if (weeklyProgress.status === 'NOT_STARTED') {
+    reasons.push(
+      `Non hai ancora iniziato la settimana: il tuo target è di ${weeklyProgress.targetSessions} ${targetWorkoutLabel}.`,
+    );
+  } else if (weeklyProgress.status === 'IN_PROGRESS') {
+    reasons.push(
+      `Hai completato ${weeklyProgress.completedSessions} ${completedWorkoutLabel} su ${weeklyProgress.targetSessions}: ne restano ${weeklyProgress.remainingSessions}.`,
+    );
+  } else if (weeklyProgress.status === 'TARGET_REACHED') {
+    reasons.push(
+      `Hai raggiunto il target settimanale di ${weeklyProgress.targetSessions} ${targetWorkoutLabel}.`,
+    );
+  } else {
+    reasons.push(
+      `Hai superato il target settimanale: ${weeklyProgress.completedSessions} ${completedWorkoutLabel} rispetto al target di ${weeklyProgress.targetSessions}.`,
+    );
+  }
 
   if (!hasCompletedSessions) {
     reasons.push(
@@ -263,7 +323,7 @@ export function buildCoachSessionRecommendation({
     );
   } else if (!hasMuscleData) {
     reasons.push(
-      'La seduta registrata non contiene ancora serie completate sufficienti per valutare la distribuzione muscolare.',
+      'Le sedute registrate non contengono ancora serie completate sufficienti per valutare la distribuzione muscolare.',
     );
   } else if (priorityNames.length > 0) {
     reasons.push(
@@ -271,7 +331,7 @@ export function buildCoachSessionRecommendation({
     );
   } else {
     reasons.push(
-      'Nessun gruppo muscolare risulta sotto priorità questa settimana.',
+      'La distribuzione muscolare della settimana risulta equilibrata.',
     );
   }
 
@@ -284,5 +344,6 @@ export function buildCoachSessionRecommendation({
     focus,
     structure,
     intensity,
+    weeklyProgress,
   };
 }

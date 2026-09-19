@@ -1,3 +1,5 @@
+import type { WeeklyProgressStatus } from '../rules/coachWeeklyProgress.rules';
+
 export type CoachMuscleGroupStatus = 'none' | 'low' | 'ok' | 'high';
 export type CoachInsightSeverity = 'info' | 'success' | 'warning' | 'danger';
 
@@ -39,6 +41,13 @@ export class CoachNextFocusDto {
   groups!: CoachNextFocusGroupDto[];
 }
 
+export class CoachWeeklyProgressDto {
+  status!: WeeklyProgressStatus;
+  completedSessions!: number;
+  targetSessions!: number;
+  remainingSessions!: number;
+}
+
 export class CoachRecommendedSessionDto {
   title!: string;
   sessionType!: string;
@@ -48,6 +57,7 @@ export class CoachRecommendedSessionDto {
   focus!: string;
   structure!: string;
   intensity!: string;
+  weeklyProgress!: CoachWeeklyProgressDto;
 }
 
 export class WeeklyCoachSummaryDto {

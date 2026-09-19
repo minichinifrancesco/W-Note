@@ -146,8 +146,19 @@ describe('CoachService', () => {
     );
 
     expect(result.recommendedSession.reasons[0]).toBe(
-      'Hai completato 2 allenamenti su 4.',
+      'Hai completato 2 allenamenti su 4: ne restano 2.',
     );
+
+    expect(result.recommendedSession.reasons[1]).toContain(
+      'I gruppi con meno lavoro questa settimana',
+    );
+
+    expect(result.recommendedSession.weeklyProgress).toEqual({
+      status: 'IN_PROGRESS',
+      completedSessions: 2,
+      targetSessions: 4,
+      remainingSessions: 2,
+    });
 
     expect(result.recommendedSession.guidance).toContain(
       'progressione controllata',
