@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   BadgeRow,
+  ExercisePerformanceSetRow,
   MuscleGroupLastTrainedRow,
   MuscleGroupRow,
   SetDayRow,
@@ -133,6 +134,34 @@ export class CoachRepository {
             AND ub.ottenuto_il >= ${start}
             AND ub.ottenuto_il < ${end}
         ORDER BY ub.ottenuto_il DESC
+        `;
+  }
+
+  getExercisePerformanceSets(userId: number, start: Date, end: Date) {
+    return this.prisma.$queryRaw<ExercisePerformanceSetRow[]>`
+        SELECT
+            w.id AS workoutId,
+            w.ora_inizio AS performedAt,
+            we.exercise_id AS exerciseId,
+            we.nome_snapshot AS exerciseName,
+            we.gruppo_muscolare_snapshot AS muscleGroup,
+            we.tipo_tracciamento_snapshot AS trackingType,
+            es.carico AS load,
+            es.ripetizioni AS reps
+        FROM workouts w
+        JOIN workout_exercises we ON we.workout_id = w.id
+        JOIN executed_sets es ON es.workout_exercise_id = we.id
+        WHERE
+            w.user_id = ${userId}
+            AND w.ora_inizio >= ${start}
+            AND w.ora_inizio < ${end}
+            AND w.completato = 1
+            AND es.completata = 1
+            AND (
+                COALESCE(es.carico, 0) > 0
+                OR COALESCE(es.ripetizioni, 0) > 0
+            )
+        ORDER BY w.ora_inizio ASC, w.id ASC, we.id ASC, es.numero_serie ASC
         `;
   }
 
