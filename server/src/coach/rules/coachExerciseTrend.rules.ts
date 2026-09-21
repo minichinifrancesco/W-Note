@@ -52,24 +52,38 @@ function getTrendStatus(deltaPercent: number): CoachExerciseTrendStatus {
   return 'STABLE';
 }
 
+function getLevelTone(profile: CoachProfile): string {
+  if (profile.trainingLevel === 'PRINCIPIANTE') {
+    return 'Concentrati sulla tecnica e scegli carichi che puoi controllare.';
+  }
+
+  if (profile.trainingLevel === 'INTERMEDIO') {
+    return 'Mantieni una progressione graduale, modificando una sola variabile alla volta.';
+  }
+
+  return 'Valuta il risultato insieme a recupero, qualità tecnica e volume complessivo.';
+}
+
 function getTrendMessage(
   exerciseName: string,
   status: CoachExerciseTrendStatus,
   profile: CoachProfile,
 ): string {
+  const levelTone = getLevelTone(profile);
+
   if (status === 'IMPROVING') {
-    return `${exerciseName} in miglioramento: il tuo 1RM stimato è in crescita. Mantieni la progressione senza sacrificare la tecnica.`;
+    return `${exerciseName} in miglioramento: il tuo 1RM stimato è in crescita. Mantieni la progressione senza sacrificare la tecnica. ${levelTone}`;
   }
 
   if (status === 'DECLINING') {
-    return `${exerciseName} in calo: riduci le pretese sul carico e verifica recupero, tecnica e distribuzione del volume.`;
+    return `${exerciseName} in calo: riduci le pretese sul carico e verifica recupero, tecnica e distribuzione del volume. ${levelTone}`;
   }
 
   if (profile.trainingGoal === 'FORZA') {
-    return `${exerciseName} stabile: per il tuo obiettivo Forza è un segnale da monitorare. Prima di aumentare volume, prova recuperi più lunghi o una seduta tecnica.`;
+    return `${exerciseName} stabile: per il tuo obiettivo Forza è un segnale da monitorare. Prima di aumentare volume, prova recuperi più lunghi o una seduta tecnica. ${levelTone}`;
   }
 
-  return `${exerciseName} stabile: consolida tecnica e qualità delle serie prima di aumentare il carico o il volume.`;
+  return `${exerciseName} stabile: consolida tecnica e qualità delle serie prima di aumentare il carico o il volume. ${levelTone}`;
 }
 
 function toExerciseSessions(

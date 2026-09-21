@@ -87,6 +87,42 @@ describe('buildCoachExerciseTrends', () => {
     expect(result[0].message).toContain('consolida tecnica');
   });
 
+  it.each([
+    {
+      trainingLevel: 'PRINCIPIANTE' as const,
+      expectedMessage: 'Concentrati sulla tecnica',
+    },
+    {
+      trainingLevel: 'INTERMEDIO' as const,
+      expectedMessage: 'progressione graduale',
+    },
+    {
+      trainingLevel: 'AVANZATO' as const,
+      expectedMessage: 'recupero, qualità tecnica e volume complessivo',
+    },
+  ])(
+    'adapts the stable message to the $trainingLevel level',
+    ({ trainingLevel, expectedMessage }) => {
+      const result = buildCoachExerciseTrends(
+        [
+          createRow({ workoutId: 1 }),
+          createRow({
+            workoutId: 2,
+            performedAt: new Date('2026-09-08T10:00:00.000Z'),
+          }),
+        ],
+        {
+          trainingGoal: 'MASSA',
+          trainingLevel,
+          targetWorkoutDays: 4,
+        },
+      );
+
+      expect(result[0].status).toBe('STABLE');
+      expect(result[0].message).toContain(expectedMessage);
+    },
+  );
+
   it('detects a declining estimated 1RM', () => {
     const result = buildCoachExerciseTrends(
       [
