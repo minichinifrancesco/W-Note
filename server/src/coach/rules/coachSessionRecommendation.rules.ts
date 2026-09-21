@@ -82,6 +82,20 @@ function getPriorityGroups(
     .slice(0, 3);
 }
 
+function getInitialPriorityGroups(
+  muscleGroups: CoachMuscleGroupDto[],
+): CoachMuscleGroupDto[] {
+  const hasHistoricalData = muscleGroups.some(
+    (group) => group.lastTrainedAt !== null,
+  );
+
+  if (!hasHistoricalData) {
+    return [];
+  }
+
+  return getPriorityGroups(muscleGroups);
+}
+
 function getRecoverySessionType(
   status: WeeklyProgressStatus,
   hasMuscleData: boolean,
@@ -170,14 +184,22 @@ function getFocusGroupLabel(groupName: string): string {
 function getSessionFocus(
   sessionType: string,
   priorityGroups: CoachMuscleGroupDto[],
-  hasMuscleData: boolean,
+  hasRecommendationData: boolean,
 ): string {
-  if (!hasMuscleData || sessionType.startsWith('Full body')) {
+  if (!hasRecommendationData) {
     return 'Copri i tre movimenti principali: gambe, spinta e tirata, scegliendo almeno un esercizio per ogni grande distretto.';
   }
 
   if (priorityGroups.length === 0) {
     return 'Mantieni una distribuzione equilibrata tra i principali distretti muscolari.';
+  }
+
+  if (sessionType.startsWith('Full body')) {
+    const priorityNames = priorityGroups
+      .map((group) => getFocusGroupLabel(group.name))
+      .join(', ');
+
+    return `Copri i tre movimenti principali: gambe, spinta e tirata. Dai priorità a ${priorityNames} nella scelta degli esercizi.`;
   }
 
   const [mainPriority, ...secondaryPriorities] = priorityGroups;
@@ -369,7 +391,18 @@ export function buildCoachSessionRecommendation({
   );
   const hasCompletedSessions = totals.sessions > 0;
   const hasMuscleData = hasCompletedSessions && totals.completedSets > 0;
-  const priorityGroups = hasMuscleData ? getPriorityGroups(muscleGroups) : [];
+  const currentPriorityGroups = hasMuscleData
+    ? getPriorityGroups(muscleGroups)
+    : [];
+  const initialPriorityGroups = !hasCompletedSessions
+    ? getInitialPriorityGroups(muscleGroups)
+    : [];
+  const priorityGroups =
+    currentPriorityGroups.length > 0
+      ? currentPriorityGroups
+      : initialPriorityGroups;
+  const hasRecommendationData =
+    hasMuscleData || initialPriorityGroups.length > 0;
   const priorityNames = priorityGroups.map((group) => group.name);
   const recoverySessionType = getRecoverySessionType(
     weeklyProgress.status,
@@ -378,13 +411,13 @@ export function buildCoachSessionRecommendation({
   );
   const sessionType =
     recoverySessionType ??
-    (hasMuscleData
+    (hasRecommendationData
       ? getSessionType(profile, priorityGroups)
       : getInitialSessionType(profile));
   const isRecoverySession = sessionType === 'Recupero e mobilità';
   const focus = isRecoverySession
     ? 'Recupero generale, mobilità e preparazione alla prossima settimana.'
-    : getSessionFocus(sessionType, priorityGroups, hasMuscleData);
+    : getSessionFocus(sessionType, priorityGroups, hasRecommendationData);
 
   const structure = isRecoverySession
     ? 'Dedica la seduta a mobilità, respirazione e attività leggera, senza aggiungere volume allenante.'
@@ -420,9 +453,13 @@ export function buildCoachSessionRecommendation({
     );
   }
 
-  if (!hasCompletedSessions) {
+  if (!hasCompletedSessions && priorityNames.length > 0) {
     reasons.push(
-      `In assenza di dati recenti, il tuo profilo indica come punto di partenza: ${sessionType}.`,
+      `Non hai ancora registrato sedute questa settimana. Lo storico indica come priorità: ${priorityNames.join(', ')}.`,
+    );
+  } else if (!hasCompletedSessions) {
+    reasons.push(
+      `In assenza di dati recenti o storici, il tuo profilo indica come punto di partenza: ${sessionType}.`,
     );
   } else if (!hasMuscleData) {
     reasons.push(

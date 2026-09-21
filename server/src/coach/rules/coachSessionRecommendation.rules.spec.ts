@@ -129,8 +129,71 @@ describe('buildCoachSessionRecommendation', () => {
 
     expect(result.sessionType).toBe('Full body ipertrofia');
     expect(result.priorities).toEqual([]);
-    expect(result.reasons[1]).toContain('assenza di dati recenti');
+    expect(result.reasons[1]).toContain('assenza di dati recenti o storici');
     expect(result.reasons[1]).toContain('Full body ipertrofia');
+  });
+
+  it('uses muscle history to choose the first weekly session', () => {
+    const result = buildCoachSessionRecommendation({
+      profile: {
+        trainingGoal: 'MASSA',
+        trainingLevel: 'INTERMEDIO',
+        targetWorkoutDays: 4,
+      },
+      totals: {
+        ...totals,
+        sessions: 0,
+        completedSets: 0,
+        volume: 0,
+        durationSeconds: 0,
+        averageDurationSeconds: 0,
+      },
+      muscleGroups: [
+        muscle('Schiena', 'none', 0, null),
+        muscle('Petto', 'none', 0, '2026-08-20T10:00:00.000Z'),
+        muscle('Spalle', 'none', 0, '2026-09-01T10:00:00.000Z'),
+        muscle('Gambe e glutei', 'none', 0, '2026-09-10T10:00:00.000Z'),
+      ],
+    });
+
+    expect(result.weeklyProgress.status).toBe('NOT_STARTED');
+    expect(result.sessionType).toBe('Upper body ipertrofia');
+    expect(result.priorities).toEqual(['Schiena', 'Petto', 'Spalle']);
+    expect(result.focus).toContain('Petto e Dorso');
+    expect(result.focus).toContain('Spalle');
+    expect(result.reasons[1]).toContain(
+      'Lo storico indica come priorità: Schiena, Petto, Spalle',
+    );
+  });
+
+  it('adds historical priorities to an initial full body session', () => {
+    const result = buildCoachSessionRecommendation({
+      profile: {
+        trainingGoal: 'MASSA',
+        trainingLevel: 'INTERMEDIO',
+        targetWorkoutDays: 2,
+      },
+      totals: {
+        ...totals,
+        sessions: 0,
+        completedSets: 0,
+        volume: 0,
+        durationSeconds: 0,
+        averageDurationSeconds: 0,
+      },
+      muscleGroups: [
+        muscle('Schiena', 'none', 0, null),
+        muscle('Petto', 'none', 0, '2026-08-20T10:00:00.000Z'),
+        muscle('Gambe e glutei', 'none', 0, '2026-09-01T10:00:00.000Z'),
+      ],
+    });
+
+    expect(result.sessionType).toBe('Full body ipertrofia');
+    expect(result.priorities).toEqual(['Schiena', 'Petto', 'Gambe e glutei']);
+    expect(result.focus).toContain('gambe, spinta e tirata');
+    expect(result.focus).toContain(
+      'Dai priorità a Dorso, Petto, Gambe e glutei',
+    );
   });
 
   it('uses the singular form for one completed workout', () => {
@@ -166,6 +229,28 @@ describe('buildCoachSessionRecommendation', () => {
 
     expect(result.sessionType).toBe('Seduta bilanciata');
     expect(result.priorities).toEqual([]);
+  });
+
+  it('keeps a metabolic session when weekly muscle work is balanced', () => {
+    const result = buildCoachSessionRecommendation({
+      profile: {
+        trainingGoal: 'DIMAGRIMENTO',
+        trainingLevel: 'INTERMEDIO',
+        targetWorkoutDays: 4,
+      },
+      totals,
+      muscleGroups: [
+        muscle('Petto', 'ok', 6),
+        muscle('Schiena', 'ok', 6),
+        muscle('Gambe e glutei', 'ok', 8),
+      ],
+    });
+
+    expect(result.sessionType).toBe('Full body metabolica');
+    expect(result.priorities).toEqual([]);
+    expect(result.focus).toBe(
+      'Mantieni una distribuzione equilibrata tra i principali distretti muscolari.',
+    );
   });
 
   it('does not infer muscle priorities from a session without completed sets', () => {
