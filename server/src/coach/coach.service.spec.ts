@@ -18,6 +18,7 @@ describe('CoachService', () => {
       getWorkoutDays: jest.fn(),
       getSetDays: jest.fn(),
       getBadges: jest.fn(),
+      getExercisePerformanceSets: jest.fn(),
     } as unknown as jest.Mocked<CoachRepository>;
 
     service = new CoachService(repository);
@@ -134,6 +135,29 @@ describe('CoachService', () => {
 
     repository.getBadges.mockResolvedValue([]);
 
+    repository.getExercisePerformanceSets.mockResolvedValue([
+      {
+        workoutId: 100,
+        performedAt: new Date('2026-08-24T10:00:00.000Z'),
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        trackingType: 'WEIGHT_REPS',
+        load: 100,
+        reps: 5,
+      },
+      {
+        workoutId: 101,
+        performedAt: new Date('2026-09-14T10:00:00.000Z'),
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        trackingType: 'WEIGHT_REPS',
+        load: 105,
+        reps: 5,
+      },
+    ]);
+
     const result = await service.getWeeklySummary(
       {
         userId: 42,
@@ -219,6 +243,31 @@ describe('CoachService', () => {
     });
 
     expect(result.nextFocus).toBeDefined();
+
+    const [trendUserId, trendStart, trendEnd] =
+      repository.getExercisePerformanceSets.mock.calls[0];
+
+    expect(trendUserId).toBe(42);
+    expect(trendStart).toBeInstanceOf(Date);
+    expect(trendEnd).toBeInstanceOf(Date);
+
+    expect(trendStart.getFullYear()).toBe(2026);
+    expect(trendStart.getMonth()).toBe(5);
+    expect(trendStart.getDate()).toBe(29);
+
+    expect(trendEnd.getFullYear()).toBe(2026);
+    expect(trendEnd.getMonth()).toBe(8);
+    expect(trendEnd.getDate()).toBe(21);
+
+    expect(result.exerciseTrends).toEqual([
+      expect.objectContaining({
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        status: 'IMPROVING',
+        comparedSessions: 2,
+      }),
+    ]);
 
     expect(result.insights).toBeDefined();
   });

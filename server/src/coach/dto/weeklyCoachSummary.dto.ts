@@ -2,6 +2,7 @@ import type {
   WeeklyPaceStatus,
   WeeklyProgressStatus,
 } from '../rules/coachWeeklyProgress.rules';
+import type { CoachExerciseTrendStatus } from '../rules/coachExerciseTrend.rules';
 
 export type CoachMuscleGroupStatus = 'none' | 'low' | 'ok' | 'high';
 export type CoachInsightSeverity = 'info' | 'success' | 'warning' | 'danger';
@@ -54,6 +55,18 @@ export class CoachWeeklyProgressDto {
   daysRemaining!: number;
 }
 
+export class CoachExerciseTrendDto {
+  exerciseId!: number | null;
+  exerciseName!: string;
+  muscleGroup!: string;
+  status!: CoachExerciseTrendStatus;
+  currentEstimatedOneRm!: number;
+  previousEstimatedOneRm!: number;
+  deltaPercent!: number;
+  comparedSessions!: number;
+  message!: string;
+}
+
 export class CoachRecommendedSessionDto {
   title!: string;
   sessionType!: string;
@@ -76,6 +89,7 @@ export class WeeklyCoachSummaryDto {
   badges!: CoachBadgeSummaryDto;
   insights!: CoachInsightDto[];
   nextFocus!: CoachNextFocusDto;
+  exerciseTrends!: CoachExerciseTrendDto[];
   recommendedSession!: CoachRecommendedSessionDto;
 }
 

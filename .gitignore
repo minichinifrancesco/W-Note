@@ -3,6 +3,7 @@ node_modules/
 
 # Build artifacts
 /server/dist/
+/server/coverage/
 .expo/
 /mobile/dist/
 dist/

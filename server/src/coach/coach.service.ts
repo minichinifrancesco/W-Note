@@ -13,9 +13,14 @@ import {
   toTotalsDto,
 } from './mappers/coach.mapper';
 import { buildCoachNextFocus } from './rules/coachNextFocus.rules';
+import { buildCoachExerciseTrends } from './rules/coachExerciseTrend.rules';
 import { CoachRepository } from './repositories/coach.repository';
 import { buildCoachInsights } from './rules/coachInsights.rules';
-import { getPreviousPeriod, getWeekPeriod } from './utils/coachPeriod.util';
+import {
+  getExerciseTrendPeriod,
+  getPreviousPeriod,
+  getWeekPeriod,
+} from './utils/coachPeriod.util';
 import {
   adaptSessionStructureToWeeklyPace,
   adaptSessionTypeAndFocusToWeeklyPace,
@@ -37,6 +42,7 @@ export class CoachService {
   ): Promise<WeeklyCoachSummaryDto> {
     const period = getWeekPeriod(weekStart);
     const previousPeriod = getPreviousPeriod(period);
+    const exerciseTrendPeriod = getExerciseTrendPeriod(period);
 
     const [
       coachProfileRow,
@@ -49,6 +55,7 @@ export class CoachService {
       workoutDayRows,
       setDayRows,
       badgeRows,
+      exercisePerformanceSetRows,
     ] = await Promise.all([
       this.coachRepository.getCoachProfile(authUser.userId),
       this.coachRepository.getWorkoutTotals(
@@ -88,9 +95,19 @@ export class CoachService {
         period.end,
       ),
       this.coachRepository.getBadges(authUser.userId, period.start, period.end),
+      this.coachRepository.getExercisePerformanceSets(
+        authUser.userId,
+        exerciseTrendPeriod.start,
+        exerciseTrendPeriod.end,
+      ),
     ]);
 
     const coachProfile = normalizeCoachProfile(coachProfileRow);
+
+    const exerciseTrends = buildCoachExerciseTrends(
+      exercisePerformanceSetRows,
+      coachProfile,
+    );
 
     const totals = toTotalsDto(currentWorkoutTotals[0], currentSetTotals[0]);
     const previousTotals = toTotalsDto(
@@ -162,6 +179,7 @@ export class CoachService {
       badges,
       insights: buildCoachInsights(totals, previousTotals, muscleGroups),
       nextFocus: buildCoachNextFocus(muscleGroups),
+      exerciseTrends,
       recommendedSession,
     };
   }

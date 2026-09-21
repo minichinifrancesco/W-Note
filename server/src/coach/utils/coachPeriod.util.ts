@@ -1,32 +1,62 @@
-import { BadRequestException } from "@nestjs/common";
-import { CoachPeriod } from "../types/coachQueryRows.types";
+import { BadRequestException } from '@nestjs/common';
+import { CoachPeriod } from '../types/coachQueryRows.types';
 
-export function getWeekPeriod(weekStart?: string) : CoachPeriod {
-    const baseDate = weekStart ? new Date(`${weekStart}T00:00:00`) : new Date();
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+export const EXERCISE_TREND_LOOKBACK_DAYS = 84;
 
-    if (Number.isNaN(baseDate.getTime())) {
-        throw new BadRequestException('weekStart non valido');
-    }
+function isValidWeekStart(value: string, date: Date): boolean {
+  if (!ISO_DATE_PATTERN.test(value) || Number.isNaN(date.getTime())) {
+    return false;
+  }
 
-    const day = baseDate.getDay();
-    const diffToMonday = day === 0 ? -6 : 1 - day;
+  const normalizedDate = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
 
-    const start = new Date(baseDate);
-    start.setHours(0, 0, 0, 0);
-    start.setDate(start.getDate() + diffToMonday);
-
-    const end = new Date(start);
-    end.setDate(start.getDate() + 7);
-
-    return { start, end};
+  return normalizedDate === value;
 }
 
-export function getPreviousPeriod(period: CoachPeriod) : CoachPeriod {
-    const start = new Date(period.start);
-    start.setDate(start.getDate() - 7);
+export function getWeekPeriod(weekStart?: string): CoachPeriod {
+  const baseDate = weekStart ? new Date(`${weekStart}T00:00:00`) : new Date();
 
-    const end = new Date(period.end);
-    end.setDate(end.getDate() - 7);
+  if (
+    (weekStart !== undefined && !isValidWeekStart(weekStart, baseDate)) ||
+    Number.isNaN(baseDate.getTime())
+  ) {
+    throw new BadRequestException('weekStart non valido');
+  }
 
-    return { start, end };
+  const day = baseDate.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+
+  const start = new Date(baseDate);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() + diffToMonday);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+
+  return { start, end };
+}
+
+export function getPreviousPeriod(period: CoachPeriod): CoachPeriod {
+  const start = new Date(period.start);
+  start.setDate(start.getDate() - 7);
+
+  const end = new Date(period.end);
+  end.setDate(end.getDate() - 7);
+
+  return { start, end };
+}
+
+export function getExerciseTrendPeriod(period: CoachPeriod): CoachPeriod {
+  const start = new Date(period.end);
+  start.setDate(start.getDate() - EXERCISE_TREND_LOOKBACK_DAYS);
+
+  return {
+    start,
+    end: new Date(period.end),
+  };
 }
