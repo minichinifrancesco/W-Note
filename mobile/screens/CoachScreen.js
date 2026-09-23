@@ -14,6 +14,7 @@ import { useEffectiveDark, useSettings } from "../context/SettingsContext";
 import { getStyles, getThemeColors } from "../styles/styles";
 import CoachSummaryMetrics from "../features/coach/components/CoachSummaryMetrics";
 import CoachRecommendedSessionSection from "../features/coach/components/CoachRecommendedSessionSection";
+import CoachExerciseTrendsSection from "../features/coach/components/CoachExerciseTrendsSection";
 import CoachWeekNavigator from "../features/coach/components/CoachWeekNavigator";
 import CoachComparisonCard from "../features/coach/components/CoachComparisonCard";
 import CoachInsightsSection from "../features/coach/components/CoachInsightsSection";
@@ -140,6 +141,13 @@ export default function CoachScreen({
               summary={summary}
               colors={colors}
               styles={styles}
+            />
+
+            <CoachExerciseTrendsSection
+              summary={summary}
+              colors={colors}
+              styles={styles}
+              formatOptions={formatOptions}
             />
 
             {hasSessions ? (
