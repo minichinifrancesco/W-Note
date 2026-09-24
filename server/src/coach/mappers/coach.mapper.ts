@@ -19,10 +19,14 @@ import {
 import { COACH_TRACKED_MUSCLE_GROUPS } from '../constants/coachMuscleGroups.constants';
 
 export function toPeriodDto(period: CoachPeriod) {
+  const inclusiveEnd = new Date(period.end);
+
+  inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+
   return {
     start: period.start.toISOString(),
     end: period.end.toISOString(),
-    label: `${period.start.toLocaleDateString('it-IT')} - ${new Date(period.end.getTime() - 1).toLocaleDateString('it-IT')}`,
+    label: `${period.start.toLocaleDateString('it-IT')} - ${inclusiveEnd.toLocaleDateString('it-IT')}`,
   };
 }
 
