@@ -14,6 +14,7 @@ import {
 } from './mappers/coach.mapper';
 import { buildCoachNextFocus } from './rules/coachNextFocus.rules';
 import { buildCoachExerciseTrends } from './rules/coachExerciseTrend.rules';
+import { adaptSessionRecommendationToExerciseTrends } from './rules/coachExerciseTrendRecommendation.rules';
 import { CoachRepository } from './repositories/coach.repository';
 import { buildCoachInsights } from './rules/coachInsights.rules';
 import {
@@ -155,7 +156,7 @@ export class CoachService {
         ]
       : sessionRecommendation.reasons;
 
-    const recommendedSession: CoachRecommendedSessionDto = {
+    const paceAdjustedRecommendedSession: CoachRecommendedSessionDto = {
       ...sessionRecommendation,
       sessionType: adjustedTypeAndFocus.sessionType,
       focus: adjustedTypeAndFocus.focus,
@@ -168,6 +169,12 @@ export class CoachService {
         daysRemaining: weeklyPace.daysRemaining,
       },
     };
+
+    const recommendedSession = adaptSessionRecommendationToExerciseTrends(
+      paceAdjustedRecommendedSession,
+      exerciseTrends,
+      coachProfile,
+    );
 
     return {
       period: toPeriodDto(period),

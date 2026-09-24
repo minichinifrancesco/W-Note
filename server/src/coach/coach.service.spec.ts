@@ -172,7 +172,12 @@ describe('CoachService', () => {
       expect.objectContaining({
         title: 'Prossima seduta consigliata',
         sessionType: 'Upper body ipertrofia compatta',
-        priorities: ['Schiena', 'Petto', 'Spalle'],
+        priorities: [
+          'Panca piana: progressione graduale',
+          'Schiena',
+          'Petto',
+          'Spalle',
+        ],
       }),
     );
 
@@ -186,6 +191,10 @@ describe('CoachService', () => {
 
     expect(result.recommendedSession.reasons[2]).toContain(
       'I gruppi con meno lavoro questa settimana',
+    );
+
+    expect(result.recommendedSession.reasons[3]).toContain(
+      '1RM stimato su Panca piana è in crescita',
     );
 
     expect(result.recommendedSession.weeklyProgress).toEqual({
@@ -268,6 +277,18 @@ describe('CoachService', () => {
         comparedSessions: 2,
       }),
     ]);
+
+    expect(result.recommendedSession.focus).toContain(
+      'Per Panca piana, mantieni la progressione',
+    );
+
+    expect(result.recommendedSession.structure).toContain(
+      'una sola variabile alla volta su Panca piana',
+    );
+
+    expect(result.recommendedSession.intensity).toContain(
+      'non aumentare anche il volume',
+    );
 
     expect(result.insights).toBeDefined();
   });
