@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -7,24 +7,25 @@ import {
   ScrollView,
   Text,
   View,
-} from "react-native";
-import BottomNav from "../components/BottomNav";
-import { logoCompact } from "../constants";
-import { useEffectiveDark, useSettings } from "../context/SettingsContext";
-import { getStyles, getThemeColors } from "../styles/styles";
-import CoachSummaryMetrics from "../features/coach/components/CoachSummaryMetrics";
-import CoachRecommendedSessionSection from "../features/coach/components/CoachRecommendedSessionSection";
-import CoachExerciseTrendsSection from "../features/coach/components/CoachExerciseTrendsSection";
-import CoachWeekNavigator from "../features/coach/components/CoachWeekNavigator";
-import CoachComparisonCard from "../features/coach/components/CoachComparisonCard";
-import CoachInsightsSection from "../features/coach/components/CoachInsightsSection";
-import CoachWeekDayStrip from "../features/coach/components/CoachWeekDayStrip";
-import CoachBadgesSection from "../features/coach/components/CoachBadgesSection";
-import CoachEmptyState from "../features/coach/components/CoachEmptyState";
-import CoachNextFocusSection from "../features/coach/components/CoachNextFocusSection";
-import CoachExportButton from "../features/coach/components/CoachExportButton";
-import { useWeeklyCoachSummary } from "../features/coach/hooks/useWeeklyCoachSummary";
-import { useCoachReportExport } from "../features/coach/hooks/useCoachReportExport";
+} from 'react-native';
+import BottomNav from '../components/BottomNav';
+import { logoCompact } from '../constants';
+import { useEffectiveDark, useSettings } from '../context/SettingsContext';
+import { getStyles, getThemeColors } from '../styles/styles';
+import CoachSummaryMetrics from '../features/coach/components/CoachSummaryMetrics';
+import CoachRecommendedSessionSection from '../features/coach/components/CoachRecommendedSessionSection';
+import CoachWeeklyPaceSection from '../features/coach/components/CoachWeeklyPaceSection';
+import CoachExerciseTrendsSection from '../features/coach/components/CoachExerciseTrendsSection';
+import CoachWeekNavigator from '../features/coach/components/CoachWeekNavigator';
+import CoachComparisonCard from '../features/coach/components/CoachComparisonCard';
+import CoachInsightsSection from '../features/coach/components/CoachInsightsSection';
+import CoachWeekDayStrip from '../features/coach/components/CoachWeekDayStrip';
+import CoachBadgesSection from '../features/coach/components/CoachBadgesSection';
+import CoachEmptyState from '../features/coach/components/CoachEmptyState';
+import CoachNextFocusSection from '../features/coach/components/CoachNextFocusSection';
+import CoachExportButton from '../features/coach/components/CoachExportButton';
+import { useWeeklyCoachSummary } from '../features/coach/hooks/useWeeklyCoachSummary';
+import { useCoachReportExport } from '../features/coach/hooks/useCoachReportExport';
 
 export default function CoachScreen({
   authToken,
@@ -70,7 +71,7 @@ export default function CoachScreen({
     });
 
   const goToHome = () => {
-    setCurrentScreen("home");
+    setCurrentScreen('home');
   };
 
   return (
@@ -82,7 +83,7 @@ export default function CoachScreen({
           <View>
             <Text style={styles.headerTitle}>Coach</Text>
             <Text style={styles.headerSubtitle}>
-              {summary?.period?.label || "Dashboard settimanale"}
+              {summary?.period?.label || 'Dashboard settimanale'}
             </Text>
           </View>
         </View>
@@ -109,7 +110,7 @@ export default function CoachScreen({
         />
 
         {loading ? (
-          <View style={{ paddingVertical: 32, alignItems: "center" }}>
+          <View style={{ paddingVertical: 32, alignItems: 'center' }}>
             <ActivityIndicator color={colors.primary} />
 
             <Text style={{ marginTop: 8, color: colors.textMuted }}>
@@ -141,6 +142,13 @@ export default function CoachScreen({
               summary={summary}
               colors={colors}
               styles={styles}
+            />
+
+            <CoachWeeklyPaceSection
+              summary={summary}
+              colors={colors}
+              styles={styles}
+              isCurrentWeek={isCurrentWeek}
             />
 
             <CoachExerciseTrendsSection
