@@ -7,6 +7,7 @@ import {
 import { CoachProfile } from '../types/coachProfile.types';
 
 import { getWeeklyProgress } from './coachWeeklyProgress.rules';
+import { getCoachVolumeSaturation } from './coachVolumeSaturation.rules';
 
 import type {
   WeeklyPace,
@@ -45,6 +46,20 @@ const LOWER_BODY_GROUPS = new Set([
   'Polpacci',
   'Glutei specifici',
 ]);
+
+const VOLUME_SATURATION_PRIORITIES = [
+  'Mobilità',
+  'Camminata leggera',
+  'Tecnica senza carico o riposo',
+];
+
+const VOLUME_SATURATION_FOCUS =
+  'Mobilità, camminata leggera, tecnica senza carico o riposo.';
+
+const VOLUME_SATURATION_REASONS = [
+  'Il volume settimanale è già elevato su gran parte dei distretti.',
+  'Aggiungere un’altra seduta intensa ora ridurrebbe la qualità del recupero.',
+];
 
 function getLastTrainedScore(value: string | null): number {
   if (!value) {
@@ -100,7 +115,11 @@ function getRecoverySessionType(
   status: WeeklyProgressStatus,
   hasMuscleData: boolean,
   priorityGroups: CoachMuscleGroupDto[],
+  isVolumeSaturated: boolean,
 ): string | null {
+  if (isVolumeSaturated) {
+    return 'Recupero e mobilità';
+  }
   const isBalancedTargetReached =
     status === 'TARGET_REACHED' && hasMuscleData && priorityGroups.length === 0;
 
@@ -335,6 +354,13 @@ export function adaptSessionTypeAndFocusToWeeklyPace(
   progress: WeeklyProgress,
   pace: WeeklyPace,
 ): SessionTypeAndFocus {
+  if (baseSessionType === 'Recupero e mobilità') {
+    return {
+      sessionType: baseSessionType,
+      focus: baseFocus,
+    };
+  }
+
   const shouldUseCompactSession =
     pace.status === 'BEHIND_TARGET' &&
     pace.daysRemaining === 1 &&
@@ -368,8 +394,13 @@ export function adaptSessionTypeAndFocusToWeeklyPace(
 export function adaptSessionStructureToWeeklyPace(
   baseStructure: string,
   pace: WeeklyPace,
+  isRecoverySession = false,
 ): string {
-  if (pace.status !== 'BEHIND_TARGET' || pace.daysRemaining === 0) {
+  if (
+    isRecoverySession ||
+    pace.status !== 'BEHIND_TARGET' ||
+    pace.daysRemaining === 0
+  ) {
     return baseStructure;
   }
 
@@ -391,6 +422,8 @@ export function buildCoachSessionRecommendation({
   );
   const hasCompletedSessions = totals.sessions > 0;
   const hasMuscleData = hasCompletedSessions && totals.completedSets > 0;
+  const volumeSaturation = getCoachVolumeSaturation(muscleGroups);
+  const isVolumeSaturated = volumeSaturation.isSaturated;
   const currentPriorityGroups = hasMuscleData
     ? getPriorityGroups(muscleGroups)
     : [];
@@ -404,10 +437,14 @@ export function buildCoachSessionRecommendation({
   const hasRecommendationData =
     hasMuscleData || initialPriorityGroups.length > 0;
   const priorityNames = priorityGroups.map((group) => group.name);
+  const recommendationPriorities = isVolumeSaturated
+    ? [...VOLUME_SATURATION_PRIORITIES]
+    : priorityNames;
   const recoverySessionType = getRecoverySessionType(
     weeklyProgress.status,
     hasMuscleData,
     priorityGroups,
+    isVolumeSaturated,
   );
   const sessionType =
     recoverySessionType ??
@@ -415,17 +452,21 @@ export function buildCoachSessionRecommendation({
       ? getSessionType(profile, priorityGroups)
       : getInitialSessionType(profile));
   const isRecoverySession = sessionType === 'Recupero e mobilità';
-  const focus = isRecoverySession
-    ? 'Recupero generale, mobilità e preparazione alla prossima settimana.'
-    : getSessionFocus(sessionType, priorityGroups, hasRecommendationData);
+  const focus = isVolumeSaturated
+    ? VOLUME_SATURATION_FOCUS
+    : isRecoverySession
+      ? 'Recupero generale, mobilità e preparazione alla prossima settimana.'
+      : getSessionFocus(sessionType, priorityGroups, hasRecommendationData);
 
   const structure = isRecoverySession
     ? 'Dedica la seduta a mobilità, respirazione e attività leggera, senza aggiungere volume allenante.'
     : getSessionStructure(profile);
 
-  const intensity = isRecoverySession
-    ? 'Mantieni uno sforzo leggero e interrompi qualsiasi attività che aumenti affaticamento o dolore.'
-    : getSessionIntensity(profile);
+  const intensity = isVolumeSaturated
+    ? 'Sforzo leggero. Non aggiungere volume allenante.'
+    : isRecoverySession
+      ? 'Mantieni uno sforzo leggero e interrompi qualsiasi attività che aumenti affaticamento o dolore.'
+      : getSessionIntensity(profile);
 
   const completedWorkoutLabel =
     weeklyProgress.completedSessions === 1 ? 'allenamento' : 'allenamenti';
@@ -433,54 +474,60 @@ export function buildCoachSessionRecommendation({
   const targetWorkoutLabel =
     weeklyProgress.targetSessions === 1 ? 'allenamento' : 'allenamenti';
 
-  const reasons: string[] = [];
+  const reasons: string[] = isVolumeSaturated
+    ? [...VOLUME_SATURATION_REASONS]
+    : [];
 
-  if (weeklyProgress.status === 'NOT_STARTED') {
-    reasons.push(
-      `Non hai ancora iniziato la settimana: il tuo target è di ${weeklyProgress.targetSessions} ${targetWorkoutLabel}.`,
-    );
-  } else if (weeklyProgress.status === 'IN_PROGRESS') {
-    reasons.push(
-      `Hai completato ${weeklyProgress.completedSessions} ${completedWorkoutLabel} su ${weeklyProgress.targetSessions}: ne restano ${weeklyProgress.remainingSessions}.`,
-    );
-  } else if (weeklyProgress.status === 'TARGET_REACHED') {
-    reasons.push(
-      `Hai raggiunto il target settimanale di ${weeklyProgress.targetSessions} ${targetWorkoutLabel}.`,
-    );
-  } else {
-    reasons.push(
-      `Hai superato il target settimanale: ${weeklyProgress.completedSessions} ${completedWorkoutLabel} rispetto al target di ${weeklyProgress.targetSessions}.`,
-    );
-  }
+  if (!isVolumeSaturated) {
+    if (weeklyProgress.status === 'NOT_STARTED') {
+      reasons.push(
+        `Non hai ancora iniziato la settimana: il tuo target è di ${weeklyProgress.targetSessions} ${targetWorkoutLabel}.`,
+      );
+    } else if (weeklyProgress.status === 'IN_PROGRESS') {
+      reasons.push(
+        `Hai completato ${weeklyProgress.completedSessions} ${completedWorkoutLabel} su ${weeklyProgress.targetSessions}: ne restano ${weeklyProgress.remainingSessions}.`,
+      );
+    } else if (weeklyProgress.status === 'TARGET_REACHED') {
+      reasons.push(
+        `Hai raggiunto il target settimanale di ${weeklyProgress.targetSessions} ${targetWorkoutLabel}.`,
+      );
+    } else {
+      reasons.push(
+        `Hai superato il target settimanale: ${weeklyProgress.completedSessions} ${completedWorkoutLabel} rispetto al target di ${weeklyProgress.targetSessions}.`,
+      );
+    }
 
-  if (!hasCompletedSessions && priorityNames.length > 0) {
-    reasons.push(
-      `Non hai ancora registrato sedute questa settimana. Lo storico indica come priorità: ${priorityNames.join(', ')}.`,
-    );
-  } else if (!hasCompletedSessions) {
-    reasons.push(
-      `In assenza di dati recenti o storici, il tuo profilo indica come punto di partenza: ${sessionType}.`,
-    );
-  } else if (!hasMuscleData) {
-    reasons.push(
-      'Le sedute registrate non contengono ancora serie completate sufficienti per valutare la distribuzione muscolare.',
-    );
-  } else if (priorityNames.length > 0) {
-    reasons.push(
-      `I gruppi con meno lavoro questa settimana sono: ${priorityNames.join(', ')}.`,
-    );
-  } else {
-    reasons.push(
-      'La distribuzione muscolare della settimana risulta equilibrata.',
-    );
+    if (!hasCompletedSessions && priorityNames.length > 0) {
+      reasons.push(
+        `Non hai ancora registrato sedute questa settimana. Lo storico indica come priorità: ${priorityNames.join(', ')}.`,
+      );
+    } else if (!hasCompletedSessions) {
+      reasons.push(
+        `In assenza di dati recenti o storici, il tuo profilo indica come punto di partenza: ${sessionType}.`,
+      );
+    } else if (!hasMuscleData) {
+      reasons.push(
+        'Le sedute registrate non contengono ancora serie completate sufficienti per valutare la distribuzione muscolare.',
+      );
+    } else if (priorityNames.length > 0) {
+      reasons.push(
+        `I gruppi con meno lavoro questa settimana sono: ${priorityNames.join(', ')}.`,
+      );
+    } else {
+      reasons.push(
+        'La distribuzione muscolare della settimana risulta equilibrata.',
+      );
+    }
   }
 
   return {
     title: 'Prossima seduta consigliata',
     sessionType,
     reasons,
-    priorities: priorityNames,
-    guidance: getGuidance(profile),
+    priorities: recommendationPriorities,
+    guidance: isVolumeSaturated
+      ? 'Oggi la priorità è recuperare, non aggiungere nuovo volume.'
+      : getGuidance(profile),
     focus,
     structure,
     intensity,

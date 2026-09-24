@@ -133,7 +133,12 @@ export class CoachService {
       new Date(),
     );
 
-    const weeklyPaceReason = getWeeklyPaceReason(weeklyPace);
+    const isRecoverySession =
+      sessionRecommendation.sessionType === 'Recupero e mobilità';
+
+    const weeklyPaceReason = isRecoverySession
+      ? null
+      : getWeeklyPaceReason(weeklyPace);
 
     const adjustedTypeAndFocus = adaptSessionTypeAndFocusToWeeklyPace(
       sessionRecommendation.sessionType,
@@ -146,6 +151,7 @@ export class CoachService {
     const adjustedStructure = adaptSessionStructureToWeeklyPace(
       sessionRecommendation.structure,
       weeklyPace,
+      isRecoverySession,
     );
 
     const recommendationReasons = weeklyPaceReason

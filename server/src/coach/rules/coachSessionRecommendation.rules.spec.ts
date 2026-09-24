@@ -30,6 +30,47 @@ const totals = {
 };
 
 describe('buildCoachSessionRecommendation', () => {
+  it('forces recovery when weekly volume is saturated before the target is reached', () => {
+    const result = buildCoachSessionRecommendation({
+      profile: {
+        trainingGoal: 'MASSA',
+        trainingLevel: 'INTERMEDIO',
+        targetWorkoutDays: 5,
+      },
+      totals: {
+        ...totals,
+        sessions: 2,
+        completedSets: 54,
+        volume: 12000,
+      },
+      muscleGroups: [
+        muscle('Gambe e glutei', 'high', 13),
+        muscle('Petto', 'high', 13),
+        muscle('Schiena', 'high', 13),
+        muscle('Bicipiti', 'high', 13),
+        muscle('Tricipiti', 'low', 2),
+      ],
+    });
+
+    expect(result.weeklyProgress.status).toBe('IN_PROGRESS');
+    expect(result.sessionType).toBe('Recupero e mobilità');
+    expect(result.priorities).toEqual([
+      'Mobilità',
+      'Camminata leggera',
+      'Tecnica senza carico o riposo',
+    ]);
+    expect(result.reasons).toEqual([
+      'Il volume settimanale è già elevato su gran parte dei distretti.',
+      'Aggiungere un’altra seduta intensa ora ridurrebbe la qualità del recupero.',
+    ]);
+    expect(result.focus).toBe(
+      'Mobilità, camminata leggera, tecnica senza carico o riposo.',
+    );
+    expect(result.intensity).toBe(
+      'Sforzo leggero. Non aggiungere volume allenante.',
+    );
+  });
+
   it('recommends upper body hypertrophy for a mass profile', () => {
     const result = buildCoachSessionRecommendation({
       profile: {
@@ -443,6 +484,30 @@ describe('adaptSessionTypeAndFocusToWeeklyPace', () => {
     remainingSessions: 2,
   };
 
+  it('does not compact a recovery session when the user is behind target', () => {
+    const result = adaptSessionTypeAndFocusToWeeklyPace(
+      'Recupero e mobilità',
+      'Mobilità, camminata leggera, tecnica senza carico o riposo.',
+      ['Mobilità'],
+      {
+        status: 'IN_PROGRESS',
+        completedSessions: 2,
+        targetSessions: 5,
+        remainingSessions: 3,
+      },
+      {
+        status: 'BEHIND_TARGET',
+        expectedSessions: 4,
+        daysRemaining: 1,
+      },
+    );
+
+    expect(result).toEqual({
+      sessionType: 'Recupero e mobilità',
+      focus: 'Mobilità, camminata leggera, tecnica senza carico o riposo.',
+    });
+  });
+
   it('keeps type and focus when multiple days remain', () => {
     const result = adaptSessionTypeAndFocusToWeeklyPace(
       'Upper body ipertrofia',
@@ -574,6 +639,23 @@ describe('adaptSessionTypeAndFocusToWeeklyPace', () => {
 describe('adaptSessionStructureToWeeklyPace', () => {
   const baseStructure =
     'Inizia con 1-2 esercizi multiarticolari e completa con esercizi complementari.';
+
+  it('does not alter recovery structure when the user is behind target', () => {
+    const recoveryStructure =
+      'Dedica la seduta a mobilità, respirazione e attività leggera, senza aggiungere volume allenante.';
+
+    expect(
+      adaptSessionStructureToWeeklyPace(
+        recoveryStructure,
+        {
+          status: 'BEHIND_TARGET',
+          expectedSessions: 4,
+          daysRemaining: 1,
+        },
+        true,
+      ),
+    ).toBe(recoveryStructure);
+  });
 
   it('keeps the original structure when the user is on track', () => {
     expect(

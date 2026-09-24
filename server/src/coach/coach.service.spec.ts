@@ -292,4 +292,158 @@ describe('CoachService', () => {
 
     expect(result.insights).toBeDefined();
   });
+
+  it('forces recovery when weekly volume is saturated across major muscle groups', async () => {
+    repository.getCoachProfile.mockResolvedValue({
+      trainingGoal: 'MASSA',
+      trainingLevel: 'INTERMEDIO',
+      targetWorkoutDays: 5,
+    });
+
+    repository.getWorkoutTotals
+      .mockResolvedValueOnce([
+        {
+          sessions: 2,
+          durationSeconds: 3600,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          sessions: 0,
+          durationSeconds: 0,
+        },
+      ]);
+
+    repository.getSetTotals
+      .mockResolvedValueOnce([
+        {
+          completedSets: 54,
+          volume: 12000,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          completedSets: 0,
+          volume: 0,
+        },
+      ]);
+
+    repository.getMuscleGroups.mockResolvedValue([
+      {
+        name: 'Gambe e glutei',
+        sets: 13,
+        volume: 3500,
+        exerciseCount: 2,
+        lastTrainedAt: new Date('2026-09-18T10:00:00.000Z'),
+      },
+      {
+        name: 'Petto',
+        sets: 13,
+        volume: 3000,
+        exerciseCount: 2,
+        lastTrainedAt: new Date('2026-09-19T10:00:00.000Z'),
+      },
+      {
+        name: 'Schiena',
+        sets: 13,
+        volume: 3200,
+        exerciseCount: 2,
+        lastTrainedAt: new Date('2026-09-19T10:00:00.000Z'),
+      },
+      {
+        name: 'Bicipiti',
+        sets: 13,
+        volume: 800,
+        exerciseCount: 1,
+        lastTrainedAt: new Date('2026-09-19T10:00:00.000Z'),
+      },
+      {
+        name: 'Tricipiti',
+        sets: 2,
+        volume: 300,
+        exerciseCount: 1,
+        lastTrainedAt: new Date('2026-09-19T10:00:00.000Z'),
+      },
+    ]);
+
+    repository.getLastTrainedMuscleGroups.mockResolvedValue([]);
+    repository.getWorkoutDays.mockResolvedValue([]);
+    repository.getSetDays.mockResolvedValue([]);
+    repository.getBadges.mockResolvedValue([]);
+
+    repository.getExercisePerformanceSets.mockResolvedValue([
+      {
+        workoutId: 100,
+        performedAt: new Date('2026-08-24T10:00:00.000Z'),
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        trackingType: 'WEIGHT_REPS',
+        load: 100,
+        reps: 5,
+      },
+      {
+        workoutId: 101,
+        performedAt: new Date('2026-09-14T10:00:00.000Z'),
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        trackingType: 'WEIGHT_REPS',
+        load: 105,
+        reps: 5,
+      },
+    ]);
+
+    const result = await service.getWeeklySummary(
+      {
+        userId: 42,
+        email: 'utente@example.com',
+      },
+      '2026-09-14',
+    );
+
+    expect(result.recommendedSession.sessionType).toBe('Recupero e mobilità');
+
+    expect(result.recommendedSession.priorities).toEqual([
+      'Mobilità',
+      'Camminata leggera',
+      'Tecnica senza carico o riposo',
+    ]);
+
+    expect(result.recommendedSession.reasons).toEqual([
+      'Il volume settimanale è già elevato su gran parte dei distretti.',
+      'Aggiungere un’altra seduta intensa ora ridurrebbe la qualità del recupero.',
+    ]);
+
+    expect(result.recommendedSession.focus).toBe(
+      'Mobilità, camminata leggera, tecnica senza carico o riposo.',
+    );
+
+    expect(result.recommendedSession.structure).toBe(
+      'Dedica la seduta a mobilità, respirazione e attività leggera, senza aggiungere volume allenante.',
+    );
+
+    expect(result.recommendedSession.intensity).toBe(
+      'Sforzo leggero. Non aggiungere volume allenante.',
+    );
+
+    expect(result.recommendedSession.guidance).toBe(
+      'Oggi la priorità è recuperare, non aggiungere nuovo volume.',
+    );
+
+    expect(result.recommendedSession.reasons).not.toContain(
+      expect.stringContaining('sotto il ritmo previsto'),
+    );
+
+    expect(result.exerciseTrends).toEqual([
+      expect.objectContaining({
+        exerciseName: 'Panca piana',
+        status: 'IMPROVING',
+      }),
+    ]);
+
+    expect(result.recommendedSession.priorities).not.toContain(
+      'Panca piana: progressione graduale',
+    );
+  });
 });
