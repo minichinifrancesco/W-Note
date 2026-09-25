@@ -3,6 +3,7 @@ import type {
   WeeklyProgressStatus,
 } from '../rules/coachWeeklyProgress.rules';
 import type { CoachExerciseTrendStatus } from '../rules/coachExerciseTrend.rules';
+import type { CoachPeriodStatus } from '../utils/coachPeriod.util';
 
 export type CoachMuscleGroupStatus = 'none' | 'low' | 'ok' | 'high';
 export type CoachInsightSeverity = 'info' | 'success' | 'warning' | 'danger';
@@ -81,6 +82,7 @@ export class CoachRecommendedSessionDto {
 
 export class WeeklyCoachSummaryDto {
   period!: { start: string; end: string; label: string };
+  periodStatus!: CoachPeriodStatus;
   previousPeriod!: { start: string; end: string; label: string };
   totals!: CoachTotalsDto;
   comparison!: CoachComparisonDto;
@@ -90,7 +92,7 @@ export class WeeklyCoachSummaryDto {
   insights!: CoachInsightDto[];
   nextFocus!: CoachNextFocusDto;
   exerciseTrends!: CoachExerciseTrendDto[];
-  recommendedSession!: CoachRecommendedSessionDto;
+  recommendedSession!: CoachRecommendedSessionDto | null;
 }
 
 export class CoachDayDto {

@@ -3,6 +3,15 @@ import { CoachPeriod } from '../types/coachQueryRows.types';
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export const EXERCISE_TREND_LOOKBACK_DAYS = 84;
+export type CoachPeriodStatus = 'CURRENT' | 'HISTORICAL';
+
+function toLocalDateKey(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
 
 function isValidWeekStart(value: string, date: Date): boolean {
   if (!ISO_DATE_PATTERN.test(value) || Number.isNaN(date.getTime())) {
@@ -39,6 +48,25 @@ export function getWeekPeriod(weekStart?: string): CoachPeriod {
   end.setDate(start.getDate() + 7);
 
   return { start, end };
+}
+
+export function getCoachPeriodStatus(
+  period: CoachPeriod,
+  referenceDate = new Date(),
+): CoachPeriodStatus {
+  const currentPeriod = getWeekPeriod(toLocalDateKey(referenceDate));
+
+  if (period.start.getTime() > currentPeriod.start.getTime()) {
+    throw new BadRequestException(
+      'Non è possibile richiedere settimane future',
+    );
+  }
+
+  if (period.start.getTime() < currentPeriod.start.getTime()) {
+    return 'HISTORICAL';
+  }
+
+  return 'CURRENT';
 }
 
 export function getPreviousPeriod(period: CoachPeriod): CoachPeriod {

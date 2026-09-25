@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import {
+  getCoachPeriodStatus,
   getExerciseTrendPeriod,
   getPreviousPeriod,
   getWeekPeriod,
@@ -53,6 +54,30 @@ describe('getWeekPeriod', () => {
       expect(() => getWeekPeriod(weekStart)).toThrow(BadRequestException);
     },
   );
+});
+
+describe('getCoachPeriodStatus', () => {
+  const referenceDate = new Date(2026, 8, 16, 12, 0, 0);
+
+  it('marks the current week as current', () => {
+    const period = getWeekPeriod('2026-09-16');
+
+    expect(getCoachPeriodStatus(period, referenceDate)).toBe('CURRENT');
+  });
+
+  it('marks a previous week as historical', () => {
+    const period = getWeekPeriod('2026-09-07');
+
+    expect(getCoachPeriodStatus(period, referenceDate)).toBe('HISTORICAL');
+  });
+
+  it('rejects a future week', () => {
+    const period = getWeekPeriod('2026-09-21');
+
+    expect(() => getCoachPeriodStatus(period, referenceDate)).toThrow(
+      BadRequestException,
+    );
+  });
 });
 
 describe('getPreviousPeriod', () => {

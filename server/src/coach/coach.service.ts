@@ -18,6 +18,7 @@ import { adaptSessionRecommendationToExerciseTrends } from './rules/coachExercis
 import { CoachRepository } from './repositories/coach.repository';
 import { buildCoachInsights } from './rules/coachInsights.rules';
 import {
+  getCoachPeriodStatus,
   getExerciseTrendPeriod,
   getPreviousPeriod,
   getWeekPeriod,
@@ -42,6 +43,7 @@ export class CoachService {
     weekStart?: string,
   ): Promise<WeeklyCoachSummaryDto> {
     const period = getWeekPeriod(weekStart);
+    const periodStatus = getCoachPeriodStatus(period);
     const previousPeriod = getPreviousPeriod(period);
     const exerciseTrendPeriod = getExerciseTrendPeriod(period);
 
@@ -121,6 +123,41 @@ export class CoachService {
     );
     const days = toDayDtos(workoutDayRows, setDayRows);
     const badges = toBadgeSummaryDto(badgeRows);
+
+    const recommendedSession =
+      periodStatus === 'CURRENT'
+        ? this.buildCurrentRecommendedSession(
+            coachProfile,
+            totals,
+            muscleGroups,
+            exerciseTrends,
+            period,
+          )
+        : null;
+
+    return {
+      period: toPeriodDto(period),
+      periodStatus,
+      previousPeriod: toPeriodDto(previousPeriod),
+      totals,
+      comparison: toComparisonDto(totals, previousTotals),
+      muscleGroups,
+      days,
+      badges,
+      insights: buildCoachInsights(totals, previousTotals, muscleGroups),
+      nextFocus: buildCoachNextFocus(muscleGroups),
+      exerciseTrends,
+      recommendedSession,
+    };
+  }
+
+  private buildCurrentRecommendedSession(
+    coachProfile: ReturnType<typeof normalizeCoachProfile>,
+    totals: WeeklyCoachSummaryDto['totals'],
+    muscleGroups: WeeklyCoachSummaryDto['muscleGroups'],
+    exerciseTrends: WeeklyCoachSummaryDto['exerciseTrends'],
+    period: { start: Date; end: Date },
+  ): CoachRecommendedSessionDto {
     const sessionRecommendation = buildCoachSessionRecommendation({
       profile: coachProfile,
       totals,
@@ -176,24 +213,10 @@ export class CoachService {
       },
     };
 
-    const recommendedSession = adaptSessionRecommendationToExerciseTrends(
+    return adaptSessionRecommendationToExerciseTrends(
       paceAdjustedRecommendedSession,
       exerciseTrends,
       coachProfile,
     );
-
-    return {
-      period: toPeriodDto(period),
-      previousPeriod: toPeriodDto(previousPeriod),
-      totals,
-      comparison: toComparisonDto(totals, previousTotals),
-      muscleGroups,
-      days,
-      badges,
-      insights: buildCoachInsights(totals, previousTotals, muscleGroups),
-      nextFocus: buildCoachNextFocus(muscleGroups),
-      exerciseTrends,
-      recommendedSession,
-    };
   }
 }

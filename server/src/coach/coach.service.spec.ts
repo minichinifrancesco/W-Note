@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { CoachRepository } from './repositories/coach.repository';
 import { CoachService } from './coach.service';
 
@@ -166,9 +167,21 @@ describe('CoachService', () => {
       '2026-09-14',
     );
 
+    expect(result.periodStatus).toBe('CURRENT');
+
+    const recommendedSession = result.recommendedSession;
+
+    expect(recommendedSession).not.toBeNull();
+
+    if (!recommendedSession) {
+      throw new Error(
+        'Una settimana corrente deve contenere una seduta consigliata',
+      );
+    }
+
     expect(repository.getCoachProfile.mock.calls).toEqual([[42]]);
 
-    expect(result.recommendedSession).toEqual(
+    expect(recommendedSession).toEqual(
       expect.objectContaining({
         title: 'Prossima seduta consigliata',
         sessionType: 'Upper body ipertrofia compatta',
@@ -181,23 +194,21 @@ describe('CoachService', () => {
       }),
     );
 
-    expect(result.recommendedSession.reasons[0]).toBe(
+    expect(recommendedSession.reasons[0]).toBe(
       'Hai completato 2 allenamenti su 4: ne restano 2.',
     );
 
-    expect(result.recommendedSession.reasons[1]).toContain(
-      'sotto il ritmo previsto',
-    );
+    expect(recommendedSession.reasons[1]).toContain('sotto il ritmo previsto');
 
-    expect(result.recommendedSession.reasons[2]).toContain(
+    expect(recommendedSession.reasons[2]).toContain(
       'I gruppi con meno lavoro questa settimana',
     );
 
-    expect(result.recommendedSession.reasons[3]).toContain(
+    expect(recommendedSession.reasons[3]).toContain(
       '1RM stimato su Panca piana è in crescita',
     );
 
-    expect(result.recommendedSession.weeklyProgress).toEqual({
+    expect(recommendedSession.weeklyProgress).toEqual({
       status: 'IN_PROGRESS',
       completedSessions: 2,
       targetSessions: 4,
@@ -207,39 +218,33 @@ describe('CoachService', () => {
       daysRemaining: 1,
     });
 
-    expect(result.recommendedSession.guidance).toContain(
-      'progressione controllata',
-    );
+    expect(recommendedSession.guidance).toContain('progressione controllata');
 
-    expect(result.recommendedSession.focus).toContain(
+    expect(recommendedSession.focus).toContain(
       'Dorso come priorità principale',
     );
 
-    expect(result.recommendedSession.focus).toContain('Dorso, Petto, Spalle');
+    expect(recommendedSession.focus).toContain('Dorso, Petto, Spalle');
 
-    expect(result.recommendedSession.focus).toContain(
+    expect(recommendedSession.focus).toContain(
       'senza aggiungere volume non prioritario',
     );
 
-    expect(result.recommendedSession.structure).toContain(
+    expect(recommendedSession.structure).toContain(
       '1-2 esercizi multiarticolari',
     );
 
-    expect(result.recommendedSession.structure).toContain(
-      'un solo giorno utile',
-    );
+    expect(recommendedSession.structure).toContain('un solo giorno utile');
 
-    expect(result.recommendedSession.structure).toContain(
-      'riduci gli accessori',
-    );
+    expect(recommendedSession.structure).toContain('riduci gli accessori');
 
-    expect(result.recommendedSession.structure).toContain(
+    expect(recommendedSession.structure).toContain(
       'non tentare di recuperare tutto il volume mancante',
     );
 
-    expect(result.recommendedSession.intensity).toContain('90 e 120 secondi');
+    expect(recommendedSession.intensity).toContain('90 e 120 secondi');
 
-    expect(result.recommendedSession.intensity).toContain(
+    expect(recommendedSession.intensity).toContain(
       '1-3 ripetizioni di margine',
     );
 
@@ -278,15 +283,15 @@ describe('CoachService', () => {
       }),
     ]);
 
-    expect(result.recommendedSession.focus).toContain(
+    expect(recommendedSession.focus).toContain(
       'Per Panca piana, mantieni la progressione',
     );
 
-    expect(result.recommendedSession.structure).toContain(
+    expect(recommendedSession.structure).toContain(
       'una sola variabile alla volta su Panca piana',
     );
 
-    expect(result.recommendedSession.intensity).toContain(
+    expect(recommendedSession.intensity).toContain(
       'non aumentare anche il volume',
     );
 
@@ -402,36 +407,46 @@ describe('CoachService', () => {
       '2026-09-14',
     );
 
-    expect(result.recommendedSession.sessionType).toBe('Recupero e mobilità');
+    const recommendedSession = result.recommendedSession;
 
-    expect(result.recommendedSession.priorities).toEqual([
+    expect(recommendedSession).not.toBeNull();
+
+    if (!recommendedSession) {
+      throw new Error(
+        'Una settimana corrente deve contenere una seduta consigliata',
+      );
+    }
+
+    expect(recommendedSession.sessionType).toBe('Recupero e mobilità');
+
+    expect(recommendedSession.priorities).toEqual([
       'Mobilità',
       'Camminata leggera',
       'Tecnica senza carico o riposo',
     ]);
 
-    expect(result.recommendedSession.reasons).toEqual([
+    expect(recommendedSession.reasons).toEqual([
       'Il volume settimanale è già elevato su gran parte dei distretti.',
       'Aggiungere un’altra seduta intensa ora ridurrebbe la qualità del recupero.',
     ]);
 
-    expect(result.recommendedSession.focus).toBe(
+    expect(recommendedSession.focus).toBe(
       'Mobilità, camminata leggera, tecnica senza carico o riposo.',
     );
 
-    expect(result.recommendedSession.structure).toBe(
+    expect(recommendedSession.structure).toBe(
       'Dedica la seduta a mobilità, respirazione e attività leggera, senza aggiungere volume allenante.',
     );
 
-    expect(result.recommendedSession.intensity).toBe(
+    expect(recommendedSession.intensity).toBe(
       'Sforzo leggero. Non aggiungere volume allenante.',
     );
 
-    expect(result.recommendedSession.guidance).toBe(
+    expect(recommendedSession.guidance).toBe(
       'Oggi la priorità è recuperare, non aggiungere nuovo volume.',
     );
 
-    expect(result.recommendedSession.reasons).not.toContain(
+    expect(recommendedSession.reasons).not.toContain(
       expect.stringContaining('sotto il ritmo previsto'),
     );
 
@@ -442,8 +457,175 @@ describe('CoachService', () => {
       }),
     ]);
 
-    expect(result.recommendedSession.priorities).not.toContain(
+    expect(recommendedSession.priorities).not.toContain(
       'Panca piana: progressione graduale',
     );
+  });
+
+  it('returns a retrospective summary without an operational recommendation for a historical week', async () => {
+    repository.getCoachProfile.mockResolvedValue({
+      trainingGoal: 'MASSA',
+      trainingLevel: 'INTERMEDIO',
+      targetWorkoutDays: 3,
+    });
+
+    repository.getWorkoutTotals
+      .mockResolvedValueOnce([
+        {
+          sessions: 1,
+          durationSeconds: 1800,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          sessions: 2,
+          durationSeconds: 3600,
+        },
+      ]);
+
+    repository.getSetTotals
+      .mockResolvedValueOnce([
+        {
+          completedSets: 6,
+          volume: 1500,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          completedSets: 12,
+          volume: 3000,
+        },
+      ]);
+
+    repository.getMuscleGroups.mockResolvedValue([
+      {
+        name: 'Petto',
+        sets: 6,
+        volume: 1500,
+        exerciseCount: 1,
+        lastTrainedAt: new Date('2026-09-08T10:00:00.000Z'),
+      },
+    ]);
+
+    repository.getLastTrainedMuscleGroups.mockResolvedValue([]);
+
+    repository.getWorkoutDays.mockResolvedValue([
+      {
+        date: '2026-09-08',
+        sessions: 1,
+        durationSeconds: 1800,
+      },
+    ]);
+
+    repository.getSetDays.mockResolvedValue([
+      {
+        date: '2026-09-08',
+        completedSets: 6,
+        volume: 1500,
+      },
+    ]);
+
+    repository.getBadges.mockResolvedValue([]);
+
+    repository.getExercisePerformanceSets.mockResolvedValue([
+      {
+        workoutId: 100,
+        performedAt: new Date('2026-08-31T10:00:00.000Z'),
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        trackingType: 'WEIGHT_REPS',
+        load: 80,
+        reps: 5,
+      },
+      {
+        workoutId: 101,
+        performedAt: new Date('2026-09-08T10:00:00.000Z'),
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        trackingType: 'WEIGHT_REPS',
+        load: 85,
+        reps: 5,
+      },
+    ]);
+
+    const result = await service.getWeeklySummary(
+      {
+        userId: 42,
+        email: 'utente@example.com',
+      },
+      '2026-09-07',
+    );
+
+    expect(result.periodStatus).toBe('HISTORICAL');
+
+    expect(result.recommendedSession).toBeNull();
+
+    expect(result.totals).toEqual({
+      sessions: 1,
+      durationSeconds: 1800,
+      completedSets: 6,
+      volume: 1500,
+      averageDurationSeconds: 1800,
+    });
+
+    expect(result.comparison).toEqual({
+      sessionsDelta: -1,
+      durationSecondsDelta: -1800,
+      completedSetsDelta: -6,
+      volumeDelta: -1500,
+      volumeDeltaPercent: -50,
+    });
+
+    expect(result.days).toEqual([
+      {
+        date: '2026-09-08',
+        sessions: 1,
+        durationSeconds: 1800,
+        completedSets: 6,
+        volume: 1500,
+      },
+    ]);
+
+    expect(result.exerciseTrends).toEqual([
+      expect.objectContaining({
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        status: 'IMPROVING',
+        comparedSessions: 2,
+      }),
+    ]);
+
+    expect(result.muscleGroups).toContainEqual(
+      expect.objectContaining({
+        name: 'Petto',
+        sets: 6,
+        status: 'ok',
+      }),
+    );
+  });
+
+  it('rejects a future week before querying the repository', async () => {
+    await expect(
+      service.getWeeklySummary(
+        {
+          userId: 42,
+          email: 'utente@example.com',
+        },
+        '2026-09-21',
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(repository.getCoachProfile.mock.calls).toHaveLength(0);
+    expect(repository.getWorkoutTotals.mock.calls).toHaveLength(0);
+    expect(repository.getSetTotals.mock.calls).toHaveLength(0);
+    expect(repository.getMuscleGroups.mock.calls).toHaveLength(0);
+    expect(repository.getLastTrainedMuscleGroups.mock.calls).toHaveLength(0);
+    expect(repository.getWorkoutDays.mock.calls).toHaveLength(0);
+    expect(repository.getSetDays.mock.calls).toHaveLength(0);
+    expect(repository.getBadges.mock.calls).toHaveLength(0);
+    expect(repository.getExercisePerformanceSets.mock.calls).toHaveLength(0);
   });
 });
