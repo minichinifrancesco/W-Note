@@ -19,11 +19,9 @@ import CoachExerciseTrendsSection from "../features/coach/components/CoachExerci
 import CoachHistoricalAnalysisSection from "../features/coach/components/CoachHistoricalAnalysisSection";
 import CoachWeekNavigator from "../features/coach/components/CoachWeekNavigator";
 import CoachComparisonCard from "../features/coach/components/CoachComparisonCard";
-import CoachInsightsSection from "../features/coach/components/CoachInsightsSection";
 import CoachWeekDayStrip from "../features/coach/components/CoachWeekDayStrip";
 import CoachBadgesSection from "../features/coach/components/CoachBadgesSection";
 import CoachEmptyState from "../features/coach/components/CoachEmptyState";
-import CoachNextFocusSection from "../features/coach/components/CoachNextFocusSection";
 import CoachExportButton from "../features/coach/components/CoachExportButton";
 import { useWeeklyCoachSummary } from "../features/coach/hooks/useWeeklyCoachSummary";
 import { useCoachReportExport } from "../features/coach/hooks/useCoachReportExport";
@@ -141,53 +139,12 @@ export default function CoachScreen({
             />
 
             {isHistoricalPeriod ? (
-              <>
-                <CoachHistoricalAnalysisSection
-                  summary={summary}
-                  colors={colors}
-                  styles={styles}
-                  formatOptions={formatOptions}
-                />
-
-                <CoachExerciseTrendsSection
-                  summary={summary}
-                  colors={colors}
-                  styles={styles}
-                  formatOptions={formatOptions}
-                />
-
-                {hasSessions ? (
-                  <>
-                    <CoachWeekDayStrip
-                      summary={summary}
-                      colors={colors}
-                      styles={styles}
-                    />
-
-                    <CoachComparisonCard
-                      summary={summary}
-                      colors={colors}
-                      styles={styles}
-                      formatOptions={formatOptions}
-                    />
-
-                    <CoachBadgesSection
-                      summary={summary}
-                      colors={colors}
-                      styles={styles}
-                      formatOptions={formatOptions}
-                    />
-                  </>
-                ) : (
-                  <CoachEmptyState
-                    colors={colors}
-                    styles={styles}
-                    onGoHome={goToHome}
-                    showGoHomeButton={false}
-                    isCurrentWeek={false}
-                  />
-                )}
-              </>
+              <CoachHistoricalAnalysisSection
+                summary={summary}
+                colors={colors}
+                styles={styles}
+                formatOptions={formatOptions}
+              />
             ) : (
               <>
                 <CoachRecommendedSessionSection
@@ -200,61 +157,49 @@ export default function CoachScreen({
                   summary={summary}
                   colors={colors}
                   styles={styles}
-                  isCurrentWeek={isCurrentWeek}
+                />
+              </>
+            )}
+
+            {isHistoricalPeriod || hasSessions ? (
+              <CoachExerciseTrendsSection
+                summary={summary}
+                colors={colors}
+                styles={styles}
+                formatOptions={formatOptions}
+              />
+            ) : null}
+
+            {hasSessions ? (
+              <>
+                <CoachWeekDayStrip
+                  summary={summary}
+                  colors={colors}
+                  styles={styles}
                 />
 
-                <CoachExerciseTrendsSection
+                <CoachComparisonCard
                   summary={summary}
                   colors={colors}
                   styles={styles}
                   formatOptions={formatOptions}
                 />
 
-                {hasSessions ? (
-                  <>
-                    <CoachWeekDayStrip
-                      summary={summary}
-                      colors={colors}
-                      styles={styles}
-                    />
-
-                    <CoachComparisonCard
-                      summary={summary}
-                      colors={colors}
-                      styles={styles}
-                      formatOptions={formatOptions}
-                    />
-
-                    <CoachInsightsSection
-                      summary={summary}
-                      colors={colors}
-                      styles={styles}
-                    />
-
-                    <CoachNextFocusSection
-                      summary={summary}
-                      colors={colors}
-                      styles={styles}
-                      formatOptions={formatOptions}
-                    />
-
-                    <CoachBadgesSection
-                      summary={summary}
-                      colors={colors}
-                      styles={styles}
-                      formatOptions={formatOptions}
-                    />
-                  </>
-                ) : (
-                  <CoachEmptyState
-                    colors={colors}
-                    styles={styles}
-                    onGoHome={goToHome}
-                    showGoHomeButton={isCurrentWeek}
-                    isCurrentWeek={isCurrentWeek}
-                  />
-                )}
+                <CoachBadgesSection
+                  summary={summary}
+                  colors={colors}
+                  styles={styles}
+                  formatOptions={formatOptions}
+                />
               </>
+            ) : (
+              <CoachEmptyState
+                colors={colors}
+                styles={styles}
+                onGoHome={goToHome}
+                showGoHomeButton={!isHistoricalPeriod && isCurrentWeek}
+                isCurrentWeek={!isHistoricalPeriod && isCurrentWeek}
+              />
             )}
           </>
         ) : null}

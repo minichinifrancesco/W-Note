@@ -287,6 +287,11 @@ const buildWeeklyPaceBlock = (summary) => {
   }
 
   const content = getWeeklyPaceContent(progress);
+  const remainingSessions = Math.max(
+    Number(progress.targetSessions || 0) -
+      Number(progress.completedSessions || 0),
+    0,
+  );
 
   return `
 <table>
@@ -295,10 +300,7 @@ const buildWeeklyPaceBlock = (summary) => {
       ["Stato", content.title],
       ["Completamento", content.completionLabel],
       ["Dettaglio", content.detail],
-      [
-        "Previsti al momento del riepilogo",
-        formatSessionCount(content.expected),
-      ],
+      ["Allenamenti rimanenti", formatSessionCount(remainingSessions)],
       ["Giorni rimanenti", formatDayCount(content.daysRemaining)],
     ])}
   </tbody>
@@ -426,63 +428,6 @@ const buildDayRows = (summary, formatOptions) => {
 </tr>`,
     ),
   );
-};
-
-const buildInsightBlocks = (summary) => {
-  const insights = Array.isArray(summary?.insights) ? summary.insights : [];
-
-  if (insights.length === 0) {
-    return '<p class="empty">Nessun consiglio disponibile.</p>';
-  }
-
-  return renderRows(
-    insights.map(
-      (insight) => `
-<div class="note">
-  <strong>${escapeHtml(insight.title)}</strong>
-  <p>${escapeHtml(insight.message)}</p>
-</div>`,
-    ),
-  );
-};
-
-const buildNextFocusBlock = (summary) => {
-  const nextFocus = summary?.nextFocus;
-  const groups = Array.isArray(nextFocus?.groups) ? nextFocus.groups : [];
-
-  if (!nextFocus) {
-    return '<p class="empty">Nessun focus disponibile.</p>';
-  }
-
-  const groupRows =
-    groups.length > 0
-      ? renderRows(
-          groups.map(
-            (group) => `
-<tr>
-  <td>${escapeHtml(group.name)}</td>
-  <td>${escapeHtml(getStatusLabel(group.status))}</td>
-  <td>${escapeHtml(group.sets || 0)}</td>
-  <td>${escapeHtml(group.reason || "-")}</td>
-</tr>`,
-          ),
-        )
-      : '<tr><td colspan="4">Nessuna priorità specifica.</td></tr>';
-
-  return `
-<p class="muted">${escapeHtml(nextFocus.message)}</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Gruppo</th>
-      <th>Stato</th>
-      <th>Serie</th>
-      <th>Motivo</th>
-    </tr>
-  </thead>
-  <tbody>${groupRows}</tbody>
-</table>`;
 };
 
 const buildMuscleGroupRows = (summary, formatOptions) => {
@@ -616,19 +561,6 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
         margin: 5px 0;
       }
 
-      .note {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        margin: 10px 0;
-        padding: 12px;
-      }
-
-      .note p {
-        color: #475569;
-        margin: 4px 0 0;
-      }
-
       .trend-card {
         border: 1px solid #e2e8f0;
         border-radius: 10px;
@@ -755,17 +687,6 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
     <table>
       <tbody>${buildComparisonRows(summary, formatOptions)}</tbody>
     </table>
-
-    ${
-      isHistoricalReport
-        ? ""
-        : `
-    <h2>Consigli del Coach</h2>
-    ${buildInsightBlocks(summary)}
-
-    <h2>Prossimo Focus</h2>
-    ${buildNextFocusBlock(summary)}`
-    }
 
     <h2>Copertura muscolare</h2>
     <table>
