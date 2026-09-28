@@ -169,6 +169,13 @@ describe('CoachService', () => {
 
     expect(result.periodStatus).toBe('CURRENT');
 
+    expect(result.adherence).toEqual({
+      status: 'IN_PROGRESS',
+      completedSessions: 2,
+      targetSessions: 4,
+      remainingSessions: 2,
+    });
+
     const recommendedSession = result.recommendedSession;
 
     expect(recommendedSession).not.toBeNull();
@@ -559,6 +566,13 @@ describe('CoachService', () => {
     );
 
     expect(result.periodStatus).toBe('HISTORICAL');
+
+    expect(result.adherence).toEqual({
+      status: 'IN_PROGRESS',
+      completedSessions: 1,
+      targetSessions: 3,
+      remainingSessions: 2,
+    });
 
     expect(result.recommendedSession).toBeNull();
 

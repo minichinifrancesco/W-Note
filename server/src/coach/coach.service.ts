@@ -31,6 +31,7 @@ import {
 import {
   getWeeklyPace,
   getWeeklyPaceReason,
+  getWeeklyProgress,
 } from './rules/coachWeeklyProgress.rules';
 import { normalizeCoachProfile } from './types/coachProfile.types';
 
@@ -135,9 +136,21 @@ export class CoachService {
           )
         : null;
 
+    const adherence = recommendedSession
+      ? {
+          status: recommendedSession.weeklyProgress.status,
+          completedSessions:
+            recommendedSession.weeklyProgress.completedSessions,
+          targetSessions: recommendedSession.weeklyProgress.targetSessions,
+          remainingSessions:
+            recommendedSession.weeklyProgress.remainingSessions,
+        }
+      : getWeeklyProgress(totals.sessions, coachProfile.targetWorkoutDays);
+
     return {
       period: toPeriodDto(period),
       periodStatus,
+      adherence,
       previousPeriod: toPeriodDto(previousPeriod),
       totals,
       comparison: toComparisonDto(totals, previousTotals),

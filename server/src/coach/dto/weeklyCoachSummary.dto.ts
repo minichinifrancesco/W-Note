@@ -56,6 +56,13 @@ export class CoachWeeklyProgressDto {
   daysRemaining!: number;
 }
 
+export class CoachPeriodAdherenceDto {
+  status!: WeeklyProgressStatus;
+  completedSessions!: number;
+  targetSessions!: number;
+  remainingSessions!: number;
+}
+
 export class CoachExerciseTrendDto {
   exerciseId!: number | null;
   exerciseName!: string;
@@ -83,6 +90,7 @@ export class CoachRecommendedSessionDto {
 export class WeeklyCoachSummaryDto {
   period!: { start: string; end: string; label: string };
   periodStatus!: CoachPeriodStatus;
+  adherence!: CoachPeriodAdherenceDto;
   previousPeriod!: { start: string; end: string; label: string };
   totals!: CoachTotalsDto;
   comparison!: CoachComparisonDto;
