@@ -202,6 +202,53 @@ const getWeeklyPaceContent = (progress = {}) => {
   };
 };
 
+const getHistoricalAdherenceContent = (adherence = {}) => {
+  const completed = Number(adherence.completedSessions || 0);
+  const target = Number(adherence.targetSessions || 0);
+  const remaining = Number(adherence.remainingSessions || 0);
+
+  if (adherence.status === "ABOVE_TARGET") {
+    return {
+      title: "Target superato",
+      completionLabel: `Hai completato ${formatSessionCount(
+        completed,
+      )} rispetto al target di ${formatSessionCount(target)}.`,
+      detail: "Nel periodo hai superato il numero di sedute previsto.",
+    };
+  }
+
+  if (adherence.status === "TARGET_REACHED") {
+    return {
+      title: "Target raggiunto",
+      completionLabel: `Hai completato ${formatSessionCount(
+        completed,
+      )} su ${formatSessionCount(target)} previsti.`,
+      detail: "Nel periodo hai raggiunto il numero di sedute programmato.",
+    };
+  }
+
+  if (adherence.status === "NOT_STARTED") {
+    return {
+      title: "Nessuna seduta registrata",
+      completionLabel: `Target del periodo: ${formatSessionCount(target)}.`,
+      detail: "Nel periodo selezionato non risultano allenamenti completati.",
+    };
+  }
+
+  return {
+    title: "Target non completato",
+    completionLabel: `Hai completato ${formatSessionCount(
+      completed,
+    )} su ${formatSessionCount(target)} previsti.`,
+    detail:
+      remaining > 0
+        ? `Nel periodo non sono state completate ${formatSessionCount(
+            remaining,
+          )} rispetto al target.`
+        : "Il periodo si è concluso senza ulteriori sedute registrate.",
+  };
+};
+
 const buildMetricRows = (summary, formatOptions) => {
   const totals = summary?.totals || {};
 
@@ -256,6 +303,27 @@ const buildWeeklyPaceBlock = (summary) => {
     ])}
   </tbody>
 </table>`;
+};
+
+const buildHistoricalAnalysisBlock = (summary) => {
+  const adherence = summary?.adherence;
+
+  if (!adherence) {
+    return '<p class="empty">Analisi del periodo non disponibile.</p>';
+  }
+
+  const content = getHistoricalAdherenceContent(adherence);
+
+  return `
+  <table>
+    <tbody>
+      ${renderKeyValueRows([
+        ["Esito", content.title],
+        ["Aderenza", content.completionLabel],
+        ["Lettura", content.detail],
+      ])}
+    </tbody>
+  </table>`;
 };
 
 const buildRecommendedSessionBlock = (summary) => {
@@ -466,17 +534,22 @@ const buildBadgeRows = (summary, formatOptions) => {
 
 const buildCoachReportHtml = (summary, formatOptions = {}) => {
   const periodLabel = summary?.period?.label || "Periodo non disponibile";
+  const isHistoricalReport = summary?.periodStatus === "HISTORICAL";
 
   return `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
     <style>
+      @page {
+        margin: 32px;
+      }
+
       body {
         color: #0f172a;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         line-height: 1.45;
-        margin: 32px;
+        margin: 0;
       }
 
       h1 {
@@ -490,6 +563,8 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
         font-size: 18px;
         margin: 26px 0 10px;
         padding-bottom: 6px;
+        break-after: avoid-page;
+        page-break-after: avoid;
       }
 
       .muted {
@@ -601,6 +676,37 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
         margin: 0;
       }
 
+      .keep-together {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .badges-table {
+        table-layout: fixed;
+      }
+
+      .badges-table th:nth-child(1),
+      .badges-table td:nth-child(1) {
+        width: 32%;
+      }
+
+      .badges-table th:nth-child(2),
+      .badges-table td:nth-child(2) {
+        width: 25%;
+      }
+
+      .badges-table th:nth-child(3),
+      .badges-table td:nth-child(3) {
+        width: 20%;
+        white-space: nowrap;
+      }
+
+      .badges-table th:nth-child(4),
+      .badges-table td:nth-child(4) {
+        width: 23%;
+        white-space: nowrap;
+      }
+
       .empty {
         color: #64748b;
       }
@@ -616,11 +722,18 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
       <tbody>${buildMetricRows(summary, formatOptions)}</tbody>
     </table>
 
+    ${
+      isHistoricalReport
+        ? `
+    <h2>Analisi della settimana</h2>
+    ${buildHistoricalAnalysisBlock(summary)}`
+        : `
     <h2>Ritmo settimanale</h2>
     ${buildWeeklyPaceBlock(summary)}
 
     <h2>Prossima seduta consigliata</h2>
-    ${buildRecommendedSessionBlock(summary)}
+    ${buildRecommendedSessionBlock(summary)}`
+    }
 
     <h2>Lettura del progresso</h2>
     ${buildExerciseTrendCards(summary, formatOptions)}
@@ -643,11 +756,16 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
       <tbody>${buildComparisonRows(summary, formatOptions)}</tbody>
     </table>
 
+    ${
+      isHistoricalReport
+        ? ""
+        : `
     <h2>Consigli del Coach</h2>
     ${buildInsightBlocks(summary)}
 
     <h2>Prossimo Focus</h2>
-    ${buildNextFocusBlock(summary)}
+    ${buildNextFocusBlock(summary)}`
+    }
 
     <h2>Copertura muscolare</h2>
     <table>
@@ -663,18 +781,20 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
       <tbody>${buildMuscleGroupRows(summary, formatOptions)}</tbody>
     </table>
 
-    <h2>Badge settimanali</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Badge</th>
-          <th>Esercizio</th>
-          <th>Valore</th>
-          <th>Data</th>
-        </tr>
-      </thead>
-      <tbody>${buildBadgeRows(summary, formatOptions)}</tbody>
-    </table>
+    <div class="keep-together">
+      <h2>Badge settimanali</h2>
+      <table class="badges-table">
+        <thead>
+          <tr>
+            <th>Badge</th>
+            <th>Esercizio</th>
+            <th>Valore</th>
+            <th>Data</th>
+          </tr>
+        </thead>
+        <tbody>${buildBadgeRows(summary, formatOptions)}</tbody>
+      </table>
+    </div>
   </body>
 </html>`;
 };
