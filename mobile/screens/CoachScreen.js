@@ -131,12 +131,14 @@ export default function CoachScreen({
 
         {!loading && !error && summary ? (
           <>
-            <CoachSummaryMetrics
-              summary={summary}
-              colors={colors}
-              styles={styles}
-              formatOptions={formatOptions}
-            />
+            {hasSessions ? (
+              <CoachSummaryMetrics
+                summary={summary}
+                colors={colors}
+                styles={styles}
+                formatOptions={formatOptions}
+              />
+            ) : null}
 
             {isHistoricalPeriod ? (
               <CoachHistoricalAnalysisSection
