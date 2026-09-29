@@ -1,5 +1,5 @@
-import 'react-native-gesture-handler';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import "react-native-gesture-handler";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Alert,
   Platform,
@@ -7,15 +7,15 @@ import {
   TouchableOpacity,
   View,
   Text,
-} from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { getStyles } from './styles/styles';
+} from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { getStyles } from "./styles/styles";
 import {
   SettingsProvider,
   useEffectiveDark,
   useSettings,
-} from './context/SettingsContext';
-import { Ionicons } from '@expo/vector-icons';
+} from "./context/SettingsContext";
+import { Ionicons } from "@expo/vector-icons";
 import {
   archiveWorkoutPlan,
   createCustomExercise as createCustomExerciseRequest,
@@ -30,41 +30,43 @@ import {
   updateWorkoutPlan,
   updateWorkoutNotes,
   updateProfile,
-} from './services/api';
+} from "./services/api";
 
 // Screens
-import LoginScreen from './screens/LoginScreen';
-import HomeScreen from './screens/HomeScreen';
-import ActiveWorkoutScreen from './screens/ActiveWorkoutScreen';
-import EditTemplateScreen from './screens/EditTemplateScreen';
-import HistoryScreen from './screens/HistoryScreen';
-import ExercisesScreen from './screens/ExercisesScreen';
-import ProfileScreen from './screens/ProfileScreen';
-import CoachScreen from './screens/CoachScreen';
+import LoginScreen from "./screens/LoginScreen";
+import HomeScreen from "./screens/HomeScreen";
+import ActiveWorkoutScreen from "./screens/ActiveWorkoutScreen";
+import EditTemplateScreen from "./screens/EditTemplateScreen";
+import HistoryScreen from "./screens/HistoryScreen";
+import ExercisesScreen from "./screens/ExercisesScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import CoachScreen from "./screens/CoachScreen";
 
 // Modals
-import CreateWorkoutModal from './modals/CreateWorkoutModal';
-import ViewWorkoutModal from './modals/ViewWorkoutModal';
-import CustomExerciseModal from './modals/CustomExerciseModal';
-import RenameCustomExerciseModal from './modals/RenameCustomExerciseModal';
-import RestTimeModal from './modals/RestTimeModal';
-import EditProfileModal from './modals/EditProfileModal';
-import HistoryDetailModal from './modals/HistoryDetailModal';
-import EditHistoryModal from './modals/EditHistoryModal';
-import AddExerciseInSessionModal from './modals/AddExerciseInSessionModal';
-import AddExerciseInTemplateModal from './modals/AddExerciseInTemplateModal';
-import EditCoachProfileModal from './modals/EditCoachProfileModal';
+import CreateWorkoutModal from "./modals/CreateWorkoutModal";
+import ViewWorkoutModal from "./modals/ViewWorkoutModal";
+import CustomExerciseModal from "./modals/CustomExerciseModal";
+import RenameCustomExerciseModal from "./modals/RenameCustomExerciseModal";
+import RestTimeModal from "./modals/RestTimeModal";
+import EditProfileModal from "./modals/EditProfileModal";
+import HistoryDetailModal from "./modals/HistoryDetailModal";
+import EditHistoryModal from "./modals/EditHistoryModal";
+import AddExerciseInSessionModal from "./modals/AddExerciseInSessionModal";
+import AddExerciseInTemplateModal from "./modals/AddExerciseInTemplateModal";
+import EditCoachProfileModal from "./modals/EditCoachProfileModal";
 
 // Components
-import ExerciseDescriptionModal from './components/ExerciseDescriptionModal';
+import ExerciseDescriptionModal from "./components/ExerciseDescriptionModal";
 import {
   detectPersonalRecords,
   exerciseMatches,
   getHistoricalBestForExercise,
-} from './utils/progress';
+} from "./utils/progress";
+
+import { useAudioPlayer } from "expo-audio";
 
 const parseWorkoutNumber = (value) =>
-  parseFloat(String(value || 0).replace(',', '.')) || 0;
+  parseFloat(String(value || 0).replace(",", ".")) || 0;
 
 const normalizeTargetWorkoutDays = (value) => {
   const parsed = parseInt(String(value ?? 3), 10);
@@ -77,37 +79,37 @@ const normalizeTargetWorkoutDays = (value) => {
 const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const getPasswordValidationError = (value) => {
-  const passwordValue = value || '';
+  const passwordValue = value || "";
   if (passwordValue.length < 8) {
-    return 'La password deve contenere almeno 8 caratteri.';
+    return "La password deve contenere almeno 8 caratteri.";
   }
 
   const missingRequirements = [];
   if (!/[a-z]/.test(passwordValue)) {
-    missingRequirements.push('una lettera minuscola');
+    missingRequirements.push("una lettera minuscola");
   }
   if (!/[A-Z]/.test(passwordValue)) {
-    missingRequirements.push('una lettera maiuscola');
+    missingRequirements.push("una lettera maiuscola");
   }
-  if (!/\d/.test(passwordValue)) missingRequirements.push('un numero');
+  if (!/\d/.test(passwordValue)) missingRequirements.push("un numero");
   if (!/[^A-Za-z0-9]/.test(passwordValue)) {
-    missingRequirements.push('un simbolo');
+    missingRequirements.push("un simbolo");
   }
 
   if (missingRequirements.length > 0) {
-    return `La password deve contenere anche ${missingRequirements.join(', ')}.`;
+    return `La password deve contenere anche ${missingRequirements.join(", ")}.`;
   }
 
   return null;
 };
 
 const showAuthError = (title, message) => {
-  const safeMessage = message || 'Operazione non riuscita';
+  const safeMessage = message || "Operazione non riuscita";
 
   if (
-    Platform.OS === 'web' &&
-    typeof window !== 'undefined' &&
-    typeof window.alert === 'function'
+    Platform.OS === "web" &&
+    typeof window !== "undefined" &&
+    typeof window.alert === "function"
   ) {
     window.alert(`${title}\n\n${safeMessage}`);
     return;
@@ -117,14 +119,14 @@ const showAuthError = (title, message) => {
 };
 
 const normalizeProfileGender = (value) => {
-  const normalized = String(value || 'NON_SPECIFICATO').toUpperCase();
-  return ['MASCHIO', 'FEMMINA', 'NON_SPECIFICATO'].includes(normalized)
+  const normalized = String(value || "NON_SPECIFICATO").toUpperCase();
+  return ["MASCHIO", "FEMMINA", "NON_SPECIFICATO"].includes(normalized)
     ? normalized
-    : 'NON_SPECIFICATO';
+    : "NON_SPECIFICATO";
 };
 
 const formatProfileDate = (value) => {
-  if (!value) return '';
+  if (!value) return "";
 
   const dateOnlyMatch = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (dateOnlyMatch) {
@@ -133,11 +135,11 @@ const formatProfileDate = (value) => {
   }
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('it-IT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   });
 };
 
@@ -153,9 +155,9 @@ const FloatingWorkoutBar = React.memo(function FloatingWorkoutBar({
 }) {
   if (
     !activeWorkout ||
-    currentScreen === 'activeWorkout' ||
-    currentScreen === 'login' ||
-    currentScreen === 'editTemplate'
+    currentScreen === "activeWorkout" ||
+    currentScreen === "login" ||
+    currentScreen === "editTemplate"
   ) {
     return null;
   }
@@ -163,20 +165,20 @@ const FloatingWorkoutBar = React.memo(function FloatingWorkoutBar({
     <TouchableOpacity
       activeOpacity={0.9}
       style={{
-        position: 'absolute',
+        position: "absolute",
         bottom: 110,
         left: 12,
         right: 12,
-        backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
+        backgroundColor: isDarkMode ? "#1e293b" : "#ffffff",
         borderRadius: 12,
         borderWidth: 1.5,
-        borderColor: '#86B749',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        borderColor: "#86B749",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
         paddingVertical: 12,
         paddingHorizontal: 16,
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 6,
@@ -185,23 +187,23 @@ const FloatingWorkoutBar = React.memo(function FloatingWorkoutBar({
       onPress={onPress}
     >
       <View
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}
+        style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}
       >
         <View
           style={{
             width: 8,
             height: 8,
             borderRadius: 4,
-            backgroundColor: '#86B749',
+            backgroundColor: "#86B749",
           }}
         />
         <View style={{ flex: 1 }}>
           <Text
             style={{
               fontSize: 10,
-              fontWeight: '700',
-              color: '#86B749',
-              textTransform: 'uppercase',
+              fontWeight: "700",
+              color: "#86B749",
+              textTransform: "uppercase",
               letterSpacing: 0.5,
             }}
           >
@@ -211,21 +213,21 @@ const FloatingWorkoutBar = React.memo(function FloatingWorkoutBar({
             numberOfLines={1}
             style={{
               fontSize: 14,
-              fontWeight: '600',
-              color: isDarkMode ? '#f8fafc' : '#0f172a',
+              fontWeight: "600",
+              color: isDarkMode ? "#f8fafc" : "#0f172a",
             }}
           >
             {activeWorkout.name}
           </Text>
         </View>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <Text
           style={{
             fontSize: 16,
-            fontWeight: '700',
-            color: '#86B749',
-            fontFamily: 'monospace',
+            fontWeight: "700",
+            color: "#86B749",
+            fontFamily: "monospace",
           }}
         >
           {formatWorkoutTime(workoutSeconds)}
@@ -240,8 +242,9 @@ function MainApp() {
   const isDarkMode = useEffectiveDark();
   const { settings, loadSettings, clearSettings, formatWeight } = useSettings();
   const styles = getStyles(isDarkMode);
+  const restTimerPlayer = useAudioPlayer(require("./assets/ping.mp3"));
 
-  const [currentScreen, setCurrentScreen] = useState('login');
+  const [currentScreen, setCurrentScreen] = useState("login");
 
   const [user, setUser] = useState(null);
   const [authToken, setAuthToken] = useState(null);
@@ -290,51 +293,51 @@ function MainApp() {
   const [editingHistoryRecord, setEditingHistoryRecord] = useState(null);
 
   const [editingRestExerciseId, setEditingRestExerciseId] = useState(null);
-  const [tempRestTime, setTempRestTime] = useState('');
+  const [tempRestTime, setTempRestTime] = useState("");
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [workoutName, setWorkoutName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [workoutName, setWorkoutName] = useState("");
 
-  const [customExerciseName, setCustomExerciseName] = useState('');
-  const [customMuscleGroup, setCustomMuscleGroup] = useState('');
-  const [customExerciseType, setCustomExerciseType] = useState('weight_reps');
+  const [customExerciseName, setCustomExerciseName] = useState("");
+  const [customMuscleGroup, setCustomMuscleGroup] = useState("");
+  const [customExerciseType, setCustomExerciseType] = useState("weight_reps");
   const [customExerciseDescription, setCustomExerciseDescription] =
-    useState('');
+    useState("");
 
-  const [profileName, setProfileName] = useState('');
-  const [profileSurname, setProfileSurname] = useState('');
-  const [profileBirthDate, setProfileBirthDate] = useState('');
-  const [profileGender, setProfileGender] = useState('NON_SPECIFICATO');
-  const [profileAge, setProfileAge] = useState('');
-  const [profileHeight, setProfileHeight] = useState('');
-  const [profileWeight, setProfileWeight] = useState('');
-  const [profileTrainingGoal, setProfileTrainingGoal] = useState('GENERALE');
+  const [profileName, setProfileName] = useState("");
+  const [profileSurname, setProfileSurname] = useState("");
+  const [profileBirthDate, setProfileBirthDate] = useState("");
+  const [profileGender, setProfileGender] = useState("NON_SPECIFICATO");
+  const [profileAge, setProfileAge] = useState("");
+  const [profileHeight, setProfileHeight] = useState("");
+  const [profileWeight, setProfileWeight] = useState("");
+  const [profileTrainingGoal, setProfileTrainingGoal] = useState("GENERALE");
   const [profileTrainingLevel, setProfileTrainingLevel] =
-    useState('PRINCIPIANTE');
-  const [profileTargetWorkoutDays, setProfileTargetWorkoutDays] = useState('3');
+    useState("PRINCIPIANTE");
+  const [profileTargetWorkoutDays, setProfileTargetWorkoutDays] = useState("3");
 
   const [selectedExercise, setSelectedExercise] = useState(null);
-  const [sets, setSets] = useState('');
-  const [reps, setReps] = useState('');
-  const [weight, setWeight] = useState('');
-  const [restTime, setRestTime] = useState('60');
-  const [duration, setDuration] = useState('');
+  const [sets, setSets] = useState("");
+  const [reps, setReps] = useState("");
+  const [weight, setWeight] = useState("");
+  const [restTime, setRestTime] = useState("60");
+  const [duration, setDuration] = useState("");
 
   const [sessionSelectedExercise, setSessionSelectedExercise] = useState(null);
-  const [sessionSets, setSessionSets] = useState('');
-  const [sessionReps, setSessionReps] = useState('');
-  const [sessionWeight, setSessionWeight] = useState('');
-  const [sessionRestTime, setSessionRestTime] = useState('60');
-  const [sessionDuration, setSessionDuration] = useState('');
+  const [sessionSets, setSessionSets] = useState("");
+  const [sessionReps, setSessionReps] = useState("");
+  const [sessionWeight, setSessionWeight] = useState("");
+  const [sessionRestTime, setSessionRestTime] = useState("60");
+  const [sessionDuration, setSessionDuration] = useState("");
 
   const [templateSelectedExercise, setTemplateSelectedExercise] =
     useState(null);
-  const [templateSets, setTemplateSets] = useState('');
-  const [templateReps, setTemplateReps] = useState('');
-  const [templateWeight, setTemplateWeight] = useState('');
-  const [templateRestTime, setTemplateRestTime] = useState('60');
-  const [templateDuration, setTemplateDuration] = useState('');
+  const [templateSets, setTemplateSets] = useState("");
+  const [templateReps, setTemplateReps] = useState("");
+  const [templateWeight, setTemplateWeight] = useState("");
+  const [templateRestTime, setTemplateRestTime] = useState("60");
+  const [templateDuration, setTemplateDuration] = useState("");
 
   useEffect(() => {
     bootstrapApp();
@@ -351,47 +354,48 @@ function MainApp() {
       const triggerFeedback = async () => {
         try {
           if (settings.restTimerHaptic) {
-            const Haptics = require('expo-haptics');
+            const Haptics = require("expo-haptics");
             await Haptics.notificationAsync(
               Haptics.NotificationFeedbackType.Success,
             );
           }
         } catch (err) {
-          console.log('Haptics feedback error:', err);
+          console.log("Haptics feedback error:", err);
         }
 
         try {
           if (settings.restTimerSound) {
-            const { Audio } = require('expo-av');
-            // Configure Audio to play through the ringtone/speaker channel at maximum system output
-            await Audio.setAudioModeAsync({
-              playsInSilentModeIOS: true,
-              staysActiveInBackground: true,
-              shouldRouteThroughEarpieceAndroid: false,
-            });
-            const { sound } = await Audio.Sound.createAsync(
-              require('./assets/ping.mp3'),
-              { volume: 1.0 }, // Set volume level to 1.0 (maximum output)
-            );
-            await sound.playAsync();
-            // Automatically stop the sound after 3 seconds
-            setTimeout(async () => {
-              try {
-                await sound.stopAsync();
-                await sound.unloadAsync();
-              } catch (e) {}
-            }, 3000);
+            restTimerPlayer.volume = 1;
+            await restTimerPlayer.seekTo(0);
+            restTimerPlayer.play();
           }
         } catch (err) {
-          console.log('Audio feedback error:', err);
+          console.log("Audio feedback error:", err);
         }
       };
 
       triggerFeedback();
-      Alert.alert('Timer terminato', 'Tempo concluso!');
+      const stopRestTimerFeedback = () => {
+        restTimerPlayer.pause();
+      };
+
+      Alert.alert(
+        "Timer terminato",
+        "Tempo concluso!",
+        [
+          {
+            text: "OK",
+            onPress: stopRestTimerFeedback,
+          },
+        ],
+        {
+          cancelable: true,
+          onDismiss: stopRestTimerFeedback,
+        },
+      );
     }
     return () => clearInterval(interval);
-  }, [timerActive, timer, isPaused, settings]);
+  }, [timerActive, timer, isPaused, settings, restTimerPlayer]);
 
   useEffect(() => {
     let interval;
@@ -402,7 +406,7 @@ function MainApp() {
   }, [activeWorkout, isPaused]);
 
   const isCustomExercise = (exercise) =>
-    exercise?.custom === true || exercise?.source === 'CUSTOM';
+    exercise?.custom === true || exercise?.source === "CUSTOM";
 
   const getCustomExercises = (value) =>
     Array.isArray(value) ? value.filter(isCustomExercise) : [];
@@ -452,7 +456,7 @@ function MainApp() {
       return safeCatalog;
     } catch (error) {
       console.error(
-        'Errore caricamento catalogo esercizi:',
+        "Errore caricamento catalogo esercizi:",
         error.message || error,
       );
       return token ? baseExercises : [];
@@ -468,15 +472,15 @@ function MainApp() {
   };
 
   const applyUserProfile = (targetUser) => {
-    setProfileName(targetUser?.name || '');
-    setProfileSurname(targetUser?.surname || '');
+    setProfileName(targetUser?.name || "");
+    setProfileSurname(targetUser?.surname || "");
     setProfileBirthDate(formatProfileDate(targetUser?.birthDate));
     setProfileGender(normalizeProfileGender(targetUser?.gender));
-    setProfileAge(targetUser?.age ? String(targetUser.age) : '');
-    setProfileHeight(targetUser?.height ? String(targetUser.height) : '');
-    setProfileWeight(targetUser?.weight ? String(targetUser.weight) : '');
-    setProfileTrainingGoal(targetUser?.trainingGoal || 'GENERALE');
-    setProfileTrainingLevel(targetUser?.trainingLevel || 'PRINCIPIANTE');
+    setProfileAge(targetUser?.age ? String(targetUser.age) : "");
+    setProfileHeight(targetUser?.height ? String(targetUser.height) : "");
+    setProfileWeight(targetUser?.weight ? String(targetUser.weight) : "");
+    setProfileTrainingGoal(targetUser?.trainingGoal || "GENERALE");
+    setProfileTrainingLevel(targetUser?.trainingLevel || "PRINCIPIANTE");
     setProfileTargetWorkoutDays(String(targetUser?.targetWorkoutDays || 3));
   };
 
@@ -485,7 +489,7 @@ function MainApp() {
     try {
       serverData = await getUserData(token);
     } catch (error) {
-      console.error('Errore caricamento dati server:', error.message || error);
+      console.error("Errore caricamento dati server:", error.message || error);
     }
 
     applyServerData(serverData, catalog);
@@ -514,7 +518,7 @@ function MainApp() {
   }, []);
 
   const handleGoToActiveWorkout = useCallback(() => {
-    setCurrentScreen('activeWorkout');
+    setCurrentScreen("activeWorkout");
   }, []);
 
   const formatWorkoutTime = useCallback((totalSeconds) => {
@@ -523,18 +527,18 @@ function MainApp() {
     const seconds = totalSeconds % 60;
 
     return (
-      `${hours.toString().padStart(2, '0')}:` +
-      `${minutes.toString().padStart(2, '0')}:` +
-      `${seconds.toString().padStart(2, '0')}`
+      `${hours.toString().padStart(2, "0")}:` +
+      `${minutes.toString().padStart(2, "0")}:` +
+      `${seconds.toString().padStart(2, "0")}`
     );
   }, []);
 
   const formatDate = useCallback(() => {
     const d = new Date();
-    return d.toLocaleDateString('it-IT', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
+    return d.toLocaleDateString("it-IT", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
     });
   }, []);
 
@@ -553,7 +557,7 @@ function MainApp() {
   const getTotalHours = useCallback(() => {
     let totalSeconds = 0;
     history.forEach((record) => {
-      if (typeof record.durationSeconds === 'number') {
+      if (typeof record.durationSeconds === "number") {
         totalSeconds += record.durationSeconds;
       }
     });
@@ -566,8 +570,8 @@ function MainApp() {
       setAuthToken(token);
       setUser(nextUser);
       applyUserProfile(nextUser);
-      setCurrentScreen('home');
-      setPassword('');
+      setCurrentScreen("home");
+      setPassword("");
       await loadSettings(token);
       const catalog = await loadExerciseCatalog(token);
       await loadUserData(token, catalog);
@@ -583,11 +587,11 @@ function MainApp() {
     const loginEmail = email.trim();
 
     if (!loginEmail || !password) {
-      showAuthError('Errore', 'Compila email e password');
+      showAuthError("Errore", "Compila email e password");
       return;
     }
     if (!isValidEmail(loginEmail)) {
-      showAuthError('Errore', 'Formato email non valido');
+      showAuthError("Errore", "Formato email non valido");
       return;
     }
 
@@ -596,17 +600,17 @@ function MainApp() {
       const authResponse = await loginRequest(loginEmail, password);
       await completeAuth(authResponse);
     } catch (error) {
-      showAuthError('Errore login', error.message || 'Login non riuscito');
+      showAuthError("Errore login", error.message || "Login non riuscito");
     } finally {
       setAuthLoading(false);
     }
   };
 
   const handleRegister = async (registrationData) => {
-    const registrationEmail = (registrationData?.email || '').trim();
-    const registrationPassword = registrationData?.password || '';
-    const registrationName = (registrationData?.name || '').trim();
-    const registrationSurname = (registrationData?.surname || '').trim();
+    const registrationEmail = (registrationData?.email || "").trim();
+    const registrationPassword = registrationData?.password || "";
+    const registrationName = (registrationData?.name || "").trim();
+    const registrationSurname = (registrationData?.surname || "").trim();
     const registrationBirthDate = registrationData?.birthDate;
     const registrationGender = normalizeProfileGender(registrationData?.gender);
 
@@ -617,18 +621,18 @@ function MainApp() {
       !registrationSurname ||
       !registrationBirthDate
     ) {
-      showAuthError('Errore', 'Compila tutti i campi');
+      showAuthError("Errore", "Compila tutti i campi");
       return false;
     }
     if (!isValidEmail(registrationEmail)) {
-      showAuthError('Errore', 'Formato email non valido');
+      showAuthError("Errore", "Formato email non valido");
       return false;
     }
 
     const passwordValidationError =
       getPasswordValidationError(registrationPassword);
     if (passwordValidationError) {
-      showAuthError('Password non valida', passwordValidationError);
+      showAuthError("Password non valida", passwordValidationError);
       return false;
     }
 
@@ -646,12 +650,12 @@ function MainApp() {
       await completeAuth(authResponse);
       return true;
     } catch (error) {
-      if (error.code === 'ACCOUNT_ALREADY_EXISTS' || error.status === 409) {
-        showAuthError('Errore', 'Account già registrato, effettua il login');
+      if (error.code === "ACCOUNT_ALREADY_EXISTS" || error.status === 409) {
+        showAuthError("Errore", "Account già registrato, effettua il login");
       } else {
         showAuthError(
-          'Errore registrazione',
-          error.message || 'Registrazione non riuscita',
+          "Errore registrazione",
+          error.message || "Registrazione non riuscita",
         );
       }
       return false;
@@ -663,19 +667,19 @@ function MainApp() {
   const handleLogout = async () => {
     setUser(null);
     setAuthToken(null);
-    setCurrentScreen('login');
-    setEmail('');
-    setPassword('');
-    setProfileName('');
-    setProfileSurname('');
-    setProfileBirthDate('');
-    setProfileGender('NON_SPECIFICATO');
-    setProfileAge('');
-    setProfileHeight('');
-    setProfileWeight('');
-    setProfileTrainingGoal('GENERALE');
-    setProfileTrainingLevel('PRINCIPIANTE');
-    setProfileTargetWorkoutDays('3');
+    setCurrentScreen("login");
+    setEmail("");
+    setPassword("");
+    setProfileName("");
+    setProfileSurname("");
+    setProfileBirthDate("");
+    setProfileGender("NON_SPECIFICATO");
+    setProfileAge("");
+    setProfileHeight("");
+    setProfileWeight("");
+    setProfileTrainingGoal("GENERALE");
+    setProfileTrainingLevel("PRINCIPIANTE");
+    setProfileTargetWorkoutDays("3");
     setWorkouts([]);
     setExercises(baseExercises);
     setHistory([]);
@@ -686,7 +690,7 @@ function MainApp() {
   const createWorkout = () => {
     const newWorkout = {
       id: Date.now(),
-      name: '',
+      name: "",
       exercises: [],
       createdAt: new Date().toISOString(),
       isNew: true,
@@ -696,16 +700,16 @@ function MainApp() {
 
   const deleteWorkout = useCallback(
     (id) => {
-      Alert.alert('Conferma', 'Vuoi archiviare questa scheda?', [
-        { text: 'Annulla', style: 'cancel' },
+      Alert.alert("Conferma", "Vuoi archiviare questa scheda?", [
+        { text: "Annulla", style: "cancel" },
         {
-          text: 'Archivia',
-          style: 'destructive',
+          text: "Archivia",
+          style: "destructive",
           onPress: async () => {
             if (!authToken) {
               Alert.alert(
-                'Errore',
-                'Effettua il login per archiviare la scheda',
+                "Errore",
+                "Effettua il login per archiviare la scheda",
               );
               return;
             }
@@ -715,8 +719,8 @@ function MainApp() {
               applyServerData(serverData);
             } catch (error) {
               Alert.alert(
-                'Errore scheda',
-                error.message || 'Archiviazione scheda non riuscita',
+                "Errore scheda",
+                error.message || "Archiviazione scheda non riuscita",
               );
             }
           },
@@ -729,7 +733,7 @@ function MainApp() {
   const createCustomExercise = async (override = null) => {
     const nextName = override?.name ?? customExerciseName;
     const nextMuscleGroup = override?.muscleGroup ?? customMuscleGroup;
-    const nextEquipmentType = override?.equipmentType ?? 'Altro';
+    const nextEquipmentType = override?.equipmentType ?? "Altro";
     const nextType = override?.type ?? customExerciseType;
     const nextDescription = override?.description ?? customExerciseDescription;
     const cleanedExName = nextName.trim();
@@ -738,21 +742,21 @@ function MainApp() {
 
     if (!cleanedExName || !nextMuscleGroup.trim()) {
       Alert.alert(
-        'Errore',
-        'Compila nome esercizio e scegli il gruppo muscolare',
+        "Errore",
+        "Compila nome esercizio e scegli il gruppo muscolare",
       );
       return;
     }
     if (isOnlySpecialChars) {
       Alert.alert(
-        'Errore',
+        "Errore",
         "Il nome dell'esercizio non può contenere solo caratteri speciali o trattini",
       );
       return;
     }
 
     if (!authToken) {
-      Alert.alert('Errore', 'Effettua il login per creare un esercizio');
+      Alert.alert("Errore", "Effettua il login per creare un esercizio");
       return;
     }
 
@@ -761,8 +765,8 @@ function MainApp() {
         name: cleanedExName,
         muscleGroup: nextMuscleGroup,
         equipmentType: nextEquipmentType,
-        type: nextType || 'weight_reps',
-        description: nextDescription.trim() || '',
+        type: nextType || "weight_reps",
+        description: nextDescription.trim() || "",
       });
       setExercises((prev) => [
         ...prev,
@@ -770,18 +774,18 @@ function MainApp() {
           ...savedExercise,
           equipmentType: savedExercise.equipmentType || nextEquipmentType,
           description:
-            (savedExercise.description ?? nextDescription.trim()) || '',
+            (savedExercise.description ?? nextDescription.trim()) || "",
         },
       ]);
-      setCustomExerciseName('');
-      setCustomMuscleGroup('');
-      setCustomExerciseType('weight_reps');
-      setCustomExerciseDescription('');
+      setCustomExerciseName("");
+      setCustomMuscleGroup("");
+      setCustomExerciseType("weight_reps");
+      setCustomExerciseDescription("");
       setShowCustomExercise(false);
     } catch (error) {
       Alert.alert(
-        'Errore esercizio',
-        error.message || 'Creazione esercizio non riuscita',
+        "Errore esercizio",
+        error.message || "Creazione esercizio non riuscita",
       );
     }
   };
@@ -794,7 +798,7 @@ function MainApp() {
 
   const renameCustomExercise = useCallback(
     async (nextName) => {
-      const cleanedExName = String(nextName || '').trim();
+      const cleanedExName = String(nextName || "").trim();
       const isOnlySpecialChars =
         /^[-\s!@#$%^&*()_+={}\[\]|\\:;"'<>,.?\/~`]+$/.test(cleanedExName);
 
@@ -804,20 +808,20 @@ function MainApp() {
       }
 
       if (!cleanedExName) {
-        Alert.alert('Errore', "Inserisci il nuovo nome dell'esercizio");
+        Alert.alert("Errore", "Inserisci il nuovo nome dell'esercizio");
         return;
       }
 
       if (isOnlySpecialChars) {
         Alert.alert(
-          'Errore',
+          "Errore",
           "Il nome dell'esercizio non può contenere solo caratteri speciali o trattini",
         );
         return;
       }
 
       if (!authToken) {
-        Alert.alert('Errore', 'Effettua il login per rinominare un esercizio');
+        Alert.alert("Errore", "Effettua il login per rinominare un esercizio");
         return;
       }
 
@@ -840,8 +844,8 @@ function MainApp() {
         setShowRenameCustomExercise(false);
       } catch (error) {
         Alert.alert(
-          'Errore esercizio',
-          error.message || 'Rinomina esercizio non riuscita',
+          "Errore esercizio",
+          error.message || "Rinomina esercizio non riuscita",
         );
       }
     },
@@ -850,7 +854,7 @@ function MainApp() {
 
   const deleteCustomExercise = async (exerciseId) => {
     if (!authToken) {
-      Alert.alert('Errore', 'Effettua il login per eliminare un esercizio');
+      Alert.alert("Errore", "Effettua il login per eliminare un esercizio");
       return;
     }
 
@@ -859,17 +863,17 @@ function MainApp() {
       setExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
     } catch (error) {
       Alert.alert(
-        'Errore esercizio',
-        error.message || 'Eliminazione esercizio non riuscita',
+        "Errore esercizio",
+        error.message || "Eliminazione esercizio non riuscita",
       );
     }
   };
 
   const startWorkout = useCallback((workout) => {
     const clonedExercises = workout.exercises.map((ex) => {
-      const exType = ex.type || 'weight_reps';
-      const timed = exType === 'timed';
-      const repsOnly = exType === 'reps';
+      const exType = ex.type || "weight_reps";
+      const timed = exType === "timed";
+      const repsOnly = exType === "reps";
 
       const setDetails =
         ex.setDetails && ex.setDetails.length > 0
@@ -886,7 +890,7 @@ function MainApp() {
               completed: false,
             }));
 
-      return { ...ex, note: ex.note || '', setDetails };
+      return { ...ex, note: ex.note || "", setDetails };
     });
 
     setActiveWorkout({
@@ -898,14 +902,14 @@ function MainApp() {
     setTimer(0);
     setTimerActive(false);
     setIsPaused(false);
-    setCurrentScreen('activeWorkout');
+    setCurrentScreen("activeWorkout");
   }, []);
 
   const openTemplateEditor = useCallback((workout) => {
     const normalizedExercises = workout.exercises.map((ex) => {
-      const exType = ex.type || 'weight_reps';
-      const timed = exType === 'timed';
-      const repsOnly = exType === 'reps';
+      const exType = ex.type || "weight_reps";
+      const timed = exType === "timed";
+      const repsOnly = exType === "reps";
 
       const existingSetDetails =
         ex.setDetails && ex.setDetails.length > 0
@@ -917,47 +921,47 @@ function MainApp() {
             }))
           : [{ weight: 0, reps: 0, duration: 0, completed: false }];
 
-      return { ...ex, note: ex.note || '', setDetails: existingSetDetails };
+      return { ...ex, note: ex.note || "", setDetails: existingSetDetails };
     });
 
     setTemplateWorkout({
       ...workout,
       exercises: normalizedExercises,
     });
-    setCurrentScreen('editTemplate');
+    setCurrentScreen("editTemplate");
   }, []);
 
   const saveTemplateWorkout = useCallback(async () => {
     if (!templateWorkout) return;
     if (!authToken) {
-      Alert.alert('Errore', 'Effettua il login per salvare la scheda');
+      Alert.alert("Errore", "Effettua il login per salvare la scheda");
       return;
     }
 
-    const cleanedName = (templateWorkout.name || '').trim();
+    const cleanedName = (templateWorkout.name || "").trim();
     // Regex matches strings that are only hyphens, punctuation or special characters
     const isOnlySpecialChars =
       /^[-\s!@#$%^&*()_+={}\[\]|\\:;"'<>,.?\/~`]+$/.test(cleanedName);
 
     if (!cleanedName) {
-      Alert.alert('Errore', 'Inserisci un nome per la scheda prima di salvare');
+      Alert.alert("Errore", "Inserisci un nome per la scheda prima di salvare");
       return;
     }
     if (isOnlySpecialChars) {
       Alert.alert(
-        'Errore',
-        'Il nome della scheda non può contenere solo caratteri speciali o trattini',
+        "Errore",
+        "Il nome della scheda non può contenere solo caratteri speciali o trattini",
       );
       return;
     }
 
     const parseNumberInput = (value) =>
-      parseFloat(String(value || 0).replace(',', '.')) || 0;
+      parseFloat(String(value || 0).replace(",", ".")) || 0;
 
     const normalizedExercises = templateWorkout.exercises.map((ex) => {
-      const exType = ex.type || 'weight_reps';
-      const timed = exType === 'timed';
-      const repsOnly = exType === 'reps';
+      const exType = ex.type || "weight_reps";
+      const timed = exType === "timed";
+      const repsOnly = exType === "reps";
       const details = (ex.setDetails || []).map((sd) => ({
         weight: timed || repsOnly ? 0 : parseNumberInput(sd.weight),
         reps: timed ? 0 : parseNumberInput(sd.reps),
@@ -992,11 +996,11 @@ function MainApp() {
 
       applyServerData(serverData);
       setTemplateWorkout(null);
-      setCurrentScreen('home');
+      setCurrentScreen("home");
     } catch (error) {
       Alert.alert(
-        'Errore scheda',
-        error.message || 'Salvataggio scheda non riuscito',
+        "Errore scheda",
+        error.message || "Salvataggio scheda non riuscito",
       );
     }
   }, [templateWorkout, authToken, applyServerData]);
@@ -1048,9 +1052,9 @@ function MainApp() {
                 let isPr = false;
 
                 if (nextCompleted) {
-                  const exType = ex.type || 'weight_reps';
-                  const repsOnly = exType === 'reps';
-                  const timed = exType === 'timed';
+                  const exType = ex.type || "weight_reps";
+                  const repsOnly = exType === "reps";
+                  const timed = exType === "timed";
 
                   const histBest = getHistoricalBestForExercise(history, ex);
                   const currentWeight = Number(sd.weight) || 0;
@@ -1129,12 +1133,12 @@ function MainApp() {
           }
         }
 
-        const exType = targetExercise.type || 'weight_reps';
-        const timed = exType === 'timed';
-        const repsOnly = exType === 'reps';
+        const exType = targetExercise.type || "weight_reps";
+        const timed = exType === "timed";
+        const repsOnly = exType === "reps";
 
         let isAnomalous = false;
-        let alertMsg = '';
+        let alertMsg = "";
 
         if (prevSet) {
           if (timed) {
@@ -1175,14 +1179,14 @@ function MainApp() {
         }
 
         if (isAnomalous) {
-          Alert.alert('Valore anomalo', alertMsg, [
+          Alert.alert("Valore anomalo", alertMsg, [
             {
-              text: 'Modifica',
-              style: 'cancel',
+              text: "Modifica",
+              style: "cancel",
               onPress: () => {},
             },
             {
-              text: 'Conferma',
+              text: "Conferma",
               onPress: performToggle,
             },
           ]);
@@ -1211,9 +1215,9 @@ function MainApp() {
 
                 let isPr = sd.isPr || false;
                 if (updatedSet.completed) {
-                  const exType = ex.type || 'weight_reps';
-                  const repsOnly = exType === 'reps';
-                  const timed = exType === 'timed';
+                  const exType = ex.type || "weight_reps";
+                  const repsOnly = exType === "reps";
+                  const timed = exType === "timed";
 
                   const histBest = getHistoricalBestForExercise(history, ex);
                   const currentWeight = parseWorkoutNumber(updatedSet.weight);
@@ -1283,13 +1287,13 @@ function MainApp() {
     (exerciseId, setIndex) => {
       if (!activeWorkout) return;
       Alert.alert(
-        'Elimina serie',
+        "Elimina serie",
         `Sei sicuro di voler eliminare la serie ${setIndex + 1}?`,
         [
-          { text: 'Annulla', style: 'cancel' },
+          { text: "Annulla", style: "cancel" },
           {
-            text: 'Elimina',
-            style: 'destructive',
+            text: "Elimina",
+            style: "destructive",
             onPress: () => {
               setActiveWorkout((prev) => {
                 if (!prev) return prev;
@@ -1322,15 +1326,15 @@ function MainApp() {
       const targetEx = activeWorkout.exercises.find(
         (ex) => ex.id === exerciseId,
       );
-      const exName = targetEx ? ` "${targetEx.name}"` : '';
+      const exName = targetEx ? ` "${targetEx.name}"` : "";
       Alert.alert(
-        'Elimina esercizio',
+        "Elimina esercizio",
         `Sei sicuro di voler eliminare l'esercizio${exName}?`,
         [
-          { text: 'Annulla', style: 'cancel' },
+          { text: "Annulla", style: "cancel" },
           {
-            text: 'Elimina',
-            style: 'destructive',
+            text: "Elimina",
+            style: "destructive",
             onPress: () => {
               setActiveWorkout((prev) =>
                 prev
@@ -1359,9 +1363,9 @@ function MainApp() {
         exercises: prev.exercises.map((ex) => {
           if (ex.id !== exerciseId) return ex;
 
-          const exType = ex.type || 'weight_reps';
-          const timed = exType === 'timed';
-          const repsOnly = exType === 'reps';
+          const exType = ex.type || "weight_reps";
+          const timed = exType === "timed";
+          const repsOnly = exType === "reps";
 
           // Copy last set values for convenience
           const lastSet = ex.setDetails?.[ex.setDetails.length - 1];
@@ -1385,15 +1389,15 @@ function MainApp() {
 
   const buildExerciseEntry = useCallback(
     (exerciseData, overrideId) => {
-      const exType = exerciseData.type || 'weight_reps';
-      const timed = exType === 'timed';
+      const exType = exerciseData.type || "weight_reps";
+      const timed = exType === "timed";
       const baseRest = settings.defaultRestTime || 60;
       const newEx = {
         id: overrideId ?? Date.now() + Math.random(),
         exerciseId: exerciseData.id,
         name: exerciseData.name,
         muscleGroup: exerciseData.muscleGroup,
-        equipmentType: exerciseData.equipmentType || 'Altro',
+        equipmentType: exerciseData.equipmentType || "Altro",
         type: exType,
         sets: 1,
         reps: 0,
@@ -1410,7 +1414,7 @@ function MainApp() {
   const addExerciseToActiveWorkout = useCallback(() => {
     if (!activeWorkout) return;
     if (!sessionSelectedExercise) {
-      Alert.alert('Errore', 'Seleziona un esercizio');
+      Alert.alert("Errore", "Seleziona un esercizio");
       return;
     }
     const newEx = buildExerciseEntry(sessionSelectedExercise);
@@ -1419,11 +1423,11 @@ function MainApp() {
     );
     setShowAddExerciseInSession(false);
     setSessionSelectedExercise(null);
-    setSessionSets('');
-    setSessionReps('');
-    setSessionWeight('');
-    setSessionRestTime('60');
-    setSessionDuration('');
+    setSessionSets("");
+    setSessionReps("");
+    setSessionWeight("");
+    setSessionRestTime("60");
+    setSessionDuration("");
   }, [activeWorkout, sessionSelectedExercise, buildExerciseEntry]);
 
   const addMultipleExercisesToActiveWorkout = useCallback(
@@ -1469,7 +1473,7 @@ function MainApp() {
   const saveRestTime = useCallback(() => {
     if (!activeWorkout || !editingRestExerciseId) return;
 
-    const newRestTime = parseInt(tempRestTime || '60', 10) || 60;
+    const newRestTime = parseInt(tempRestTime || "60", 10) || 60;
 
     setActiveWorkout((prev) => {
       if (!prev) return prev;
@@ -1485,7 +1489,7 @@ function MainApp() {
 
     setShowRestTimeModal(false);
     setEditingRestExerciseId(null);
-    setTempRestTime('');
+    setTempRestTime("");
   }, [activeWorkout, editingRestExerciseId, tempRestTime]);
 
   const updateTemplateSetDetail = useCallback(
@@ -1523,7 +1527,7 @@ function MainApp() {
           if (ex.id !== exerciseId) return ex;
 
           const isTimeExercise =
-            ex.type === 'time' || ex.type === 'plank' || ex.type === 'cardio';
+            ex.type === "time" || ex.type === "plank" || ex.type === "cardio";
 
           const newSet = {
             weight: isTimeExercise ? 0 : 0,
@@ -1545,13 +1549,13 @@ function MainApp() {
     (exerciseId, setIndex) => {
       if (!templateWorkout) return;
       Alert.alert(
-        'Elimina serie',
+        "Elimina serie",
         `Sei sicuro di voler eliminare la serie ${setIndex + 1}?`,
         [
-          { text: 'Annulla', style: 'cancel' },
+          { text: "Annulla", style: "cancel" },
           {
-            text: 'Elimina',
-            style: 'destructive',
+            text: "Elimina",
+            style: "destructive",
             onPress: () => {
               setTemplateWorkout((prev) => {
                 if (!prev) return prev;
@@ -1582,15 +1586,15 @@ function MainApp() {
       const targetEx = templateWorkout.exercises.find(
         (ex) => ex.id === exerciseId,
       );
-      const exName = targetEx ? ` "${targetEx.name}"` : '';
+      const exName = targetEx ? ` "${targetEx.name}"` : "";
       Alert.alert(
-        'Elimina esercizio',
+        "Elimina esercizio",
         `Sei sicuro di voler eliminare l'esercizio${exName}?`,
         [
-          { text: 'Annulla', style: 'cancel' },
+          { text: "Annulla", style: "cancel" },
           {
-            text: 'Elimina',
-            style: 'destructive',
+            text: "Elimina",
+            style: "destructive",
             onPress: () => {
               setTemplateWorkout((prev) =>
                 prev
@@ -1612,18 +1616,18 @@ function MainApp() {
 
   const addExerciseToTemplate = useCallback(() => {
     if (!templateWorkout || !templateSelectedExercise) {
-      Alert.alert('Errore', 'Seleziona un esercizio');
+      Alert.alert("Errore", "Seleziona un esercizio");
       return;
     }
-    const exType = templateSelectedExercise.type || 'weight_reps';
-    const timed = exType === 'timed';
-    const repsOnly = exType === 'reps';
+    const exType = templateSelectedExercise.type || "weight_reps";
+    const timed = exType === "timed";
+    const repsOnly = exType === "reps";
     const exercise = {
       id: Date.now(),
       exerciseId: templateSelectedExercise.id,
       name: templateSelectedExercise.name,
       muscleGroup: templateSelectedExercise.muscleGroup,
-      equipmentType: templateSelectedExercise.equipmentType || 'Altro',
+      equipmentType: templateSelectedExercise.equipmentType || "Altro",
       type: exType,
       sets: 1,
       reps: 0,
@@ -1636,11 +1640,11 @@ function MainApp() {
       prev ? { ...prev, exercises: [...prev.exercises, exercise] } : prev,
     );
     setTemplateSelectedExercise(null);
-    setTemplateSets('');
-    setTemplateReps('');
-    setTemplateWeight('');
-    setTemplateRestTime('60');
-    setTemplateDuration('');
+    setTemplateSets("");
+    setTemplateReps("");
+    setTemplateWeight("");
+    setTemplateRestTime("60");
+    setTemplateDuration("");
     setShowAddExerciseInTemplate(false);
   }, [templateWorkout, templateSelectedExercise, settings.defaultRestTime]);
 
@@ -1649,14 +1653,14 @@ function MainApp() {
       if (!templateWorkout || !exerciseList || exerciseList.length === 0)
         return;
       const newExercises = exerciseList.map((ex) => {
-        const exType = ex.type || 'weight_reps';
-        const timed = exType === 'timed';
+        const exType = ex.type || "weight_reps";
+        const timed = exType === "timed";
         return {
           id: Date.now() + Math.random(),
           exerciseId: ex.id,
           name: ex.name,
           muscleGroup: ex.muscleGroup,
-          equipmentType: ex.equipmentType || 'Altro',
+          equipmentType: ex.equipmentType || "Altro",
           type: exType,
           sets: 1,
           reps: 0,
@@ -1679,14 +1683,14 @@ function MainApp() {
   const finishWorkout = useCallback(async () => {
     if (!activeWorkout) return;
     if (!authToken) {
-      Alert.alert('Errore', 'Effettua il login per salvare il workout');
+      Alert.alert("Errore", "Effettua il login per salvare il workout");
       return;
     }
 
     const normalizedExercises = activeWorkout.exercises.map((ex) => {
-      const exType = ex.type || 'weight_reps';
-      const timed = exType === 'timed';
-      const repsOnly = exType === 'reps';
+      const exType = ex.type || "weight_reps";
+      const timed = exType === "timed";
+      const repsOnly = exType === "reps";
       const details = (ex.setDetails || []).map((sd) => ({
         ...sd,
         weight: timed || repsOnly ? 0 : parseWorkoutNumber(sd.weight),
@@ -1736,18 +1740,18 @@ function MainApp() {
       setTimer(0);
       setTimerActive(false);
       setFocusedMuscle(null);
-      setCurrentScreen('home');
+      setCurrentScreen("home");
 
       Alert.alert(
-        'Completato!',
+        "Completato!",
         earnedBadges.length > 0
           ? `Workout salvato nello storico. Nuovi badge ottenuti: ${earnedBadges.length}`
-          : 'Workout salvato nello storico',
+          : "Workout salvato nello storico",
       );
     } catch (error) {
       Alert.alert(
-        'Errore workout',
-        error.message || 'Salvataggio workout non riuscito',
+        "Errore workout",
+        error.message || "Salvataggio workout non riuscito",
       );
     }
   }, [activeWorkout, history, workoutSeconds, authToken, applyServerData]);
@@ -1784,16 +1788,16 @@ function MainApp() {
               setDetails: ex.setDetails.map((sd, idx) => {
                 if (idx !== setIndex) return sd;
 
-                if (field === 'completed') {
+                if (field === "completed") {
                   return { ...sd, completed: !sd.completed };
                 }
 
                 let parsedValue = value;
-                if (field === 'reps' || field === 'duration') {
-                  parsedValue = parseInt(value || '0', 10) || 0;
+                if (field === "reps" || field === "duration") {
+                  parsedValue = parseInt(value || "0", 10) || 0;
                 }
-                if (field === 'weight') {
-                  parsedValue = parseFloat(value || '0') || 0;
+                if (field === "weight") {
+                  parsedValue = parseFloat(value || "0") || 0;
                 }
 
                 return { ...sd, [field]: parsedValue };
@@ -1824,7 +1828,7 @@ function MainApp() {
         await updateWorkoutNotes(authToken, recordId, noteText);
       } catch (error) {
         console.error(
-          'Errore salvataggio nota workout:',
+          "Errore salvataggio nota workout:",
           error.message || error,
         );
       }
@@ -1844,23 +1848,23 @@ function MainApp() {
   }, [editingHistoryRecord]);
 
   const openProfileEdit = useCallback(() => {
-    setProfileName(profileName || user?.name || '');
+    setProfileName(profileName || user?.name || "");
     setProfileGender(normalizeProfileGender(profileGender || user?.gender));
     setProfileHeight(
-      profileHeight || (user?.height ? String(user.height) : ''),
+      profileHeight || (user?.height ? String(user.height) : ""),
     );
     setProfileWeight(
-      profileWeight || (user?.weight ? String(user.weight) : ''),
+      profileWeight || (user?.weight ? String(user.weight) : ""),
     );
     setShowEditProfileModal(true);
   }, [profileName, profileGender, profileHeight, profileWeight, user]);
 
   const openCoachProfileEdit = useCallback(() => {
     setProfileTrainingGoal(
-      user?.trainingGoal || profileTrainingGoal || 'GENERALE',
+      user?.trainingGoal || profileTrainingGoal || "GENERALE",
     );
     setProfileTrainingLevel(
-      user?.trainingLevel || profileTrainingLevel || 'PRINCIPIANTE',
+      user?.trainingLevel || profileTrainingLevel || "PRINCIPIANTE",
     );
     setProfileTargetWorkoutDays(
       String(user?.targetWorkoutDays || profileTargetWorkoutDays || 3),
@@ -1895,8 +1899,8 @@ function MainApp() {
       setShowEditProfileModal(false);
     } catch (error) {
       Alert.alert(
-        'Errore profilo',
-        error.message || 'Salvataggio non riuscito',
+        "Errore profilo",
+        error.message || "Salvataggio non riuscito",
       );
     }
   }, [
@@ -1933,8 +1937,8 @@ function MainApp() {
         setShowEditCoachProfileModal(false);
       } catch (error) {
         Alert.alert(
-          'Errore profilo coach',
-          error.message || 'Salvataggio non riuscito',
+          "Errore profilo coach",
+          error.message || "Salvataggio non riuscito",
         );
       }
     },
@@ -1966,10 +1970,10 @@ function MainApp() {
   return (
     <>
       <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={styles.header.backgroundColor}
       />
-      {currentScreen === 'login' && (
+      {currentScreen === "login" && (
         <LoginScreen
           email={email}
           setEmail={setEmail}
@@ -1980,7 +1984,7 @@ function MainApp() {
           authLoading={authLoading}
         />
       )}
-      {currentScreen === 'home' && (
+      {currentScreen === "home" && (
         <HomeScreen
           workouts={activeWorkouts}
           formatDate={formatDate}
@@ -1996,14 +2000,14 @@ function MainApp() {
           activeWorkout={activeWorkout}
         />
       )}
-      {currentScreen === 'coach' && (
+      {currentScreen === "coach" && (
         <CoachScreen
           authToken={authToken}
           currentScreen={currentScreen}
           setCurrentScreen={setCurrentScreen}
         />
       )}
-      {currentScreen === 'activeWorkout' && (
+      {currentScreen === "activeWorkout" && (
         <ActiveWorkoutScreen
           activeWorkout={activeWorkout}
           setActiveWorkout={setActiveWorkout}
@@ -2037,7 +2041,7 @@ function MainApp() {
           setReplaceTargetExerciseId={setReplaceTargetExerciseId}
         />
       )}
-      {currentScreen === 'editTemplate' && (
+      {currentScreen === "editTemplate" && (
         <EditTemplateScreen
           templateWorkout={templateWorkout}
           setTemplateWorkout={setTemplateWorkout}
@@ -2057,7 +2061,7 @@ function MainApp() {
           openExerciseDescription={openExerciseDescription}
         />
       )}
-      {currentScreen === 'history' && (
+      {currentScreen === "history" && (
         <HistoryScreen
           history={history}
           openEditHistory={openEditHistory}
@@ -2068,7 +2072,7 @@ function MainApp() {
           setCurrentScreen={setCurrentScreen}
         />
       )}
-      {currentScreen === 'exercises' && (
+      {currentScreen === "exercises" && (
         <ExercisesScreen
           groupExercisesByMuscle={groupExercisesByMuscle}
           setShowCustomExercise={setShowCustomExercise}
@@ -2081,7 +2085,7 @@ function MainApp() {
           exercises={exercises}
         />
       )}
-      {currentScreen === 'profile' && (
+      {currentScreen === "profile" && (
         <ProfileScreen
           user={user}
           profileName={profileName}
