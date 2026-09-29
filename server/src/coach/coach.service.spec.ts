@@ -263,7 +263,8 @@ describe('CoachService', () => {
       averageDurationSeconds: 1800,
     });
 
-    expect(result.nextFocus).toBeDefined();
+    expect(result).not.toHaveProperty('insights');
+    expect(result).not.toHaveProperty('nextFocus');
 
     const [trendUserId, trendStart, trendEnd] =
       repository.getExercisePerformanceSets.mock.calls[0];
@@ -301,8 +302,6 @@ describe('CoachService', () => {
     expect(recommendedSession.intensity).toContain(
       'non aumentare anche il volume',
     );
-
-    expect(result.insights).toBeDefined();
   });
 
   it('forces recovery when weekly volume is saturated across major muscle groups', async () => {

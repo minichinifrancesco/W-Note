@@ -12,11 +12,9 @@ import {
   toPeriodDto,
   toTotalsDto,
 } from './mappers/coach.mapper';
-import { buildCoachNextFocus } from './rules/coachNextFocus.rules';
 import { buildCoachExerciseTrends } from './rules/coachExerciseTrend.rules';
 import { adaptSessionRecommendationToExerciseTrends } from './rules/coachExerciseTrendRecommendation.rules';
 import { CoachRepository } from './repositories/coach.repository';
-import { buildCoachInsights } from './rules/coachInsights.rules';
 import {
   getCoachPeriodStatus,
   getExerciseTrendPeriod,
@@ -157,8 +155,6 @@ export class CoachService {
       muscleGroups,
       days,
       badges,
-      insights: buildCoachInsights(totals, previousTotals, muscleGroups),
-      nextFocus: buildCoachNextFocus(muscleGroups),
       exerciseTrends,
       recommendedSession,
     };

@@ -6,7 +6,6 @@ import type { CoachExerciseTrendStatus } from '../rules/coachExerciseTrend.rules
 import type { CoachPeriodStatus } from '../utils/coachPeriod.util';
 
 export type CoachMuscleGroupStatus = 'none' | 'low' | 'ok' | 'high';
-export type CoachInsightSeverity = 'info' | 'success' | 'warning' | 'danger';
 
 export class CoachTotalsDto {
   sessions!: number;
@@ -23,27 +22,6 @@ export class CoachMuscleGroupDto {
   exerciseCount!: number;
   lastTrainedAt!: string | null;
   status!: CoachMuscleGroupStatus;
-}
-
-export class CoachInsightDto {
-  type!: string;
-  severity!: CoachInsightSeverity;
-  title!: string;
-  message!: string;
-}
-
-export class CoachNextFocusGroupDto {
-  name!: string;
-  status!: CoachMuscleGroupStatus;
-  sets!: number;
-  lastTrainedAt!: string | null;
-  reason!: string;
-}
-
-export class CoachNextFocusDto {
-  title!: string;
-  message!: string;
-  groups!: CoachNextFocusGroupDto[];
 }
 
 export class CoachWeeklyProgressDto {
@@ -97,8 +75,6 @@ export class WeeklyCoachSummaryDto {
   muscleGroups!: CoachMuscleGroupDto[];
   days!: CoachDayDto[];
   badges!: CoachBadgeSummaryDto;
-  insights!: CoachInsightDto[];
-  nextFocus!: CoachNextFocusDto;
   exerciseTrends!: CoachExerciseTrendDto[];
   recommendedSession!: CoachRecommendedSessionDto | null;
 }
