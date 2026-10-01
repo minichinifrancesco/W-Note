@@ -173,14 +173,17 @@ describe('CoachRepository', () => {
     expect(sql).toContain('ORDER BY w.ora_inizio ASC');
   });
 
-  it('queries the latest completed training date for each muscle group', async () => {
+  it('queries the latest completed training date for each muscle group before the period end', async () => {
     const { repository, queryCalls } = createRepository();
-    await repository.getLastTrainedMuscleGroups(userId);
+
+    await repository.getLastTrainedMuscleGroups(userId, end);
+
     const { sql, parameters } = getSingleQuery(queryCalls);
 
-    expect(parameters).toEqual([userId]);
+    expect(parameters).toEqual([userId, end]);
     expect(sql).toContain('we.gruppo_muscolare_snapshot AS name');
     expect(sql).toContain('MAX(w.ora_inizio) AS lastTrainedAt');
+    expect(sql).toContain('w.ora_inizio <');
     expect(sql).toContain('GROUP BY we.gruppo_muscolare_snapshot');
     expect(sql).toContain('w.completato = 1');
     expect(sql).toContain('es.completata = 1');

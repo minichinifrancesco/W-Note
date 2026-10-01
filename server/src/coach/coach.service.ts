@@ -85,7 +85,10 @@ export class CoachService {
         period.start,
         period.end,
       ),
-      this.coachRepository.getLastTrainedMuscleGroups(authUser.userId),
+      this.coachRepository.getLastTrainedMuscleGroups(
+        authUser.userId,
+        period.end,
+      ),
       this.coachRepository.getWorkoutDays(
         authUser.userId,
         period.start,

@@ -566,6 +566,10 @@ describe('CoachService', () => {
 
     expect(result.periodStatus).toBe('HISTORICAL');
 
+    expect(repository.getLastTrainedMuscleGroups.mock.calls).toEqual([
+      [42, new Date('2026-09-14T00:00:00')],
+    ]);
+
     expect(result.adherence).toEqual({
       status: 'IN_PROGRESS',
       completedSessions: 1,

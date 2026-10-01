@@ -165,19 +165,20 @@ export class CoachRepository {
         `;
   }
 
-  getLastTrainedMuscleGroups(userId: number) {
+  getLastTrainedMuscleGroups(userId: number, end: Date) {
     return this.prisma.$queryRaw<MuscleGroupLastTrainedRow[]>`
-        SELECT
-            we.gruppo_muscolare_snapshot AS name,
-            MAX(w.ora_inizio) AS lastTrainedAt
-        FROM workouts w
-        JOIN workout_exercises we ON we.workout_id = w.id
-        JOIN executed_sets es ON es.workout_exercise_id = we.id
-        WHERE
-            w.user_id = ${userId}
-            AND w.completato = 1
-            AND es.completata = 1
-        GROUP BY we.gruppo_muscolare_snapshot
-        `;
+    SELECT
+      we.gruppo_muscolare_snapshot AS name,
+      MAX(w.ora_inizio) AS lastTrainedAt
+    FROM workouts w
+    JOIN workout_exercises we ON we.workout_id = w.id
+    JOIN executed_sets es ON es.workout_exercise_id = we.id
+    WHERE
+      w.user_id = ${userId}
+      AND w.ora_inizio < ${end}
+      AND w.completato = 1
+      AND es.completata = 1
+    GROUP BY we.gruppo_muscolare_snapshot
+  `;
   }
 }
