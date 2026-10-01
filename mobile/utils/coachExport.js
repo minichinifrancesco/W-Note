@@ -1,7 +1,7 @@
-import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+import { Platform } from "react-native";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 import {
   formatBadgeDate,
   formatBadgeValue,
@@ -13,32 +13,32 @@ import {
   formatSignedVolume,
   formatVolume,
   formatEstimatedOneRepMax,
-} from '../features/coach/utils/coachFormatter';
+} from "../features/coach/utils/coachFormatter";
 
-const sanitizeFileName = (value = 'coach-report') => {
+const sanitizeFileName = (value = "coach-report") => {
   const cleaned = String(value)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9-_ ]/g, '')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9-_ ]/g, "")
     .trim()
-    .replace(/\s+/g, '-')
+    .replace(/\s+/g, "-")
     .toLowerCase();
 
-  return cleaned || 'coach-report';
+  return cleaned || "coach-report";
 };
 
-const escapeHtml = (value = '') =>
-  String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+const escapeHtml = (value = "") =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
 const getCoachReportFileName = (summary) => {
   const start = summary?.period?.start
     ? String(summary.period.start).slice(0, 10)
-    : 'periodo';
+    : "periodo";
 
   return `${sanitizeFileName(`coach-report-${start}`)}.pdf`;
 };
@@ -54,7 +54,7 @@ const shareFile = async (uri, options) => {
   return uri;
 };
 
-const renderRows = (rows) => rows.join('');
+const renderRows = (rows) => rows.join("");
 
 const renderKeyValueRows = (entries) =>
   renderRows(
@@ -81,43 +81,43 @@ const renderBulletList = (items, emptyMessage) => {
       (item) => `
   <li>${escapeHtml(item)}</li>`,
     )
-    .join('')}
+    .join("")}
 </ul>`;
 };
 
 const getStatusLabel = (status) => {
-  if (status === 'none') return 'Non allenato';
-  if (status === 'low') return 'Poco allenato';
-  if (status === 'ok') return 'In equilibrio';
-  if (status === 'high') return 'Molto allenato';
+  if (status === "none") return "Non allenato";
+  if (status === "low") return "Poco allenato";
+  if (status === "ok") return "In equilibrio";
+  if (status === "high") return "Molto allenato";
 
-  return 'Non disponibile';
+  return "Non disponibile";
 };
 
 const getTrendStatusLabel = (status) => {
-  if (status === 'IMPROVING') return 'In crescita';
-  if (status === 'DECLINING') return 'In calo';
+  if (status === "IMPROVING") return "In crescita";
+  if (status === "DECLINING") return "In calo";
 
-  return 'Stabile';
+  return "Stabile";
 };
 
 const formatSessionCount = (value) => {
   const count = Number(value || 0);
 
-  return `${count} ${count === 1 ? 'allenamento' : 'allenamenti'}`;
+  return `${count} ${count === 1 ? "allenamento" : "allenamenti"}`;
 };
 
 const formatDayCount = (value) => {
   const count = Number(value || 0);
 
-  return `${count} ${count === 1 ? 'giorno' : 'giorni'}`;
+  return `${count} ${count === 1 ? "giorno" : "giorni"}`;
 };
 
 const formatReportDuration = (seconds) => {
   const safeSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
 
   if (safeSeconds > 0 && safeSeconds < 60) {
-    return '< 1 min';
+    return "< 1 min";
   }
 
   return formatDuration(safeSeconds);
@@ -128,7 +128,7 @@ const formatSignedReportDuration = (seconds) => {
   const absoluteSeconds = Math.abs(safeSeconds);
 
   if (absoluteSeconds > 0 && absoluteSeconds < 60) {
-    return `${safeSeconds > 0 ? '+' : '-'} < 1 min`;
+    return `${safeSeconds > 0 ? "+" : "-"} < 1 min`;
   }
 
   return formatSignedDuration(safeSeconds);
@@ -144,35 +144,35 @@ const getWeeklyPaceContent = (progress = {}) => {
     completed,
   )} su ${target}.`;
 
-  if (progress.status === 'TARGET_REACHED') {
+  if (progress.status === "TARGET_REACHED") {
     return {
-      title: 'Target settimanale raggiunto',
+      title: "Target settimanale raggiunto",
       completionLabel,
       detail:
-        'Hai raggiunto il numero di sedute previsto. Mantieni attenzione a recupero e qualità del lavoro.',
+        "Hai raggiunto il numero di sedute previsto. Mantieni attenzione a recupero e qualità del lavoro.",
       expected,
       daysRemaining,
     };
   }
 
-  if (progress.status === 'ABOVE_TARGET') {
+  if (progress.status === "ABOVE_TARGET") {
     return {
-      title: 'Target settimanale superato',
+      title: "Target settimanale superato",
       completionLabel,
       detail:
-        'Hai superato il numero di sedute previsto. Valuta se lasciare spazio a recupero o mobilità.',
+        "Hai superato il numero di sedute previsto. Valuta se lasciare spazio a recupero o mobilità.",
       expected,
       daysRemaining,
     };
   }
 
-  if (progress.paceStatus === 'BEHIND_TARGET') {
+  if (progress.paceStatus === "BEHIND_TARGET") {
     return {
-      title: 'Ritmo da recuperare',
+      title: "Ritmo da recuperare",
       completionLabel,
       detail:
         daysRemaining === 0
-          ? 'La settimana è conclusa: usa questo dato per distribuire meglio il lavoro nella prossima.'
+          ? "La settimana è conclusa: usa questo dato per distribuire meglio il lavoro nella prossima."
           : `A questo punto erano attesi ${formatSessionCount(
               expected,
             )}. Restano ${formatDayCount(
@@ -185,9 +185,9 @@ const getWeeklyPaceContent = (progress = {}) => {
 
   return {
     title:
-      progress.status === 'NOT_STARTED'
-        ? 'Settimana da iniziare'
-        : 'In linea con il ritmo',
+      progress.status === "NOT_STARTED"
+        ? "Settimana da iniziare"
+        : "In linea con il ritmo",
     completionLabel,
     detail:
       expected === 0
@@ -207,36 +207,36 @@ const getHistoricalAdherenceContent = (adherence = {}) => {
   const target = Number(adherence.targetSessions || 0);
   const remaining = Number(adherence.remainingSessions || 0);
 
-  if (adherence.status === 'ABOVE_TARGET') {
+  if (adherence.status === "ABOVE_TARGET") {
     return {
-      title: 'Target superato',
+      title: "Target superato",
       completionLabel: `Hai completato ${formatSessionCount(
         completed,
       )} rispetto al target di ${formatSessionCount(target)}.`,
-      detail: 'Nel periodo hai superato il numero di sedute previsto.',
+      detail: "Nel periodo hai superato il numero di sedute previsto.",
     };
   }
 
-  if (adherence.status === 'TARGET_REACHED') {
+  if (adherence.status === "TARGET_REACHED") {
     return {
-      title: 'Target raggiunto',
+      title: "Target raggiunto",
       completionLabel: `Hai completato ${formatSessionCount(
         completed,
       )} su ${formatSessionCount(target)} previsti.`,
-      detail: 'Nel periodo hai raggiunto il numero di sedute programmato.',
+      detail: "Nel periodo hai raggiunto il numero di sedute programmato.",
     };
   }
 
-  if (adherence.status === 'NOT_STARTED') {
+  if (adherence.status === "NOT_STARTED") {
     return {
-      title: 'Nessuna seduta registrata',
+      title: "Nessuna seduta registrata",
       completionLabel: `Target del periodo: ${formatSessionCount(target)}.`,
-      detail: 'Nel periodo selezionato non risultano allenamenti completati.',
+      detail: "Nel periodo selezionato non risultano allenamenti completati.",
     };
   }
 
   return {
-    title: 'Target non completato',
+    title: "Target non completato",
     completionLabel: `Hai completato ${formatSessionCount(
       completed,
     )} su ${formatSessionCount(target)} previsti.`,
@@ -245,7 +245,7 @@ const getHistoricalAdherenceContent = (adherence = {}) => {
         ? `Nel periodo non sono state completate ${formatSessionCount(
             remaining,
           )} rispetto al target.`
-        : 'Il periodo si è concluso senza ulteriori sedute registrate.',
+        : "Il periodo si è concluso senza ulteriori sedute registrate.",
   };
 };
 
@@ -253,11 +253,11 @@ const buildMetricRows = (summary, formatOptions) => {
   const totals = summary?.totals || {};
 
   return renderKeyValueRows([
-    ['Sessioni', totals.sessions || 0],
-    ['Durata totale', formatReportDuration(totals.durationSeconds)],
-    ['Durata media', formatReportDuration(totals.averageDurationSeconds)],
-    ['Serie completate', totals.completedSets || 0],
-    ['Volume', formatVolume(totals.volume || 0, formatOptions)],
+    ["Sessioni", totals.sessions || 0],
+    ["Durata totale", formatReportDuration(totals.durationSeconds)],
+    ["Durata media", formatReportDuration(totals.averageDurationSeconds)],
+    ["Serie completate", totals.completedSets || 0],
+    ["Volume", formatVolume(totals.volume || 0, formatOptions)],
   ]);
 };
 
@@ -265,15 +265,15 @@ const buildComparisonRows = (summary, formatOptions) => {
   const comparison = summary?.comparison || {};
 
   return renderKeyValueRows([
-    ['Sessioni', formatSignedNumber(comparison.sessionsDelta || 0)],
-    ['Durata', formatSignedReportDuration(comparison.durationSecondsDelta)],
+    ["Sessioni", formatSignedNumber(comparison.sessionsDelta || 0)],
+    ["Durata", formatSignedReportDuration(comparison.durationSecondsDelta)],
     [
-      'Serie completate',
+      "Serie completate",
       formatSignedNumber(comparison.completedSetsDelta || 0),
     ],
-    ['Volume', formatSignedVolume(comparison.volumeDelta || 0, formatOptions)],
+    ["Volume", formatSignedVolume(comparison.volumeDelta || 0, formatOptions)],
     [
-      'Variazione volume',
+      "Variazione volume",
       formatSignedPercent(comparison.volumeDeltaPercent || 0),
     ],
   ]);
@@ -297,11 +297,11 @@ const buildWeeklyPaceBlock = (summary) => {
 <table>
   <tbody>
     ${renderKeyValueRows([
-      ['Stato', content.title],
-      ['Completamento', content.completionLabel],
-      ['Dettaglio', content.detail],
-      ['Allenamenti rimanenti', formatSessionCount(remainingSessions)],
-      ['Giorni rimanenti', formatDayCount(content.daysRemaining)],
+      ["Stato", content.title],
+      ["Completamento", content.completionLabel],
+      ["Dettaglio", content.detail],
+      ["Allenamenti rimanenti", formatSessionCount(remainingSessions)],
+      ["Giorni rimanenti", formatDayCount(content.daysRemaining)],
     ])}
   </tbody>
 </table>`;
@@ -320,9 +320,9 @@ const buildHistoricalAnalysisBlock = (summary) => {
   <table>
     <tbody>
       ${renderKeyValueRows([
-        ['Esito', content.title],
-        ['Aderenza', content.completionLabel],
-        ['Lettura', content.detail],
+        ["Esito", content.title],
+        ["Aderenza", content.completionLabel],
+        ["Lettura", content.detail],
       ])}
     </tbody>
   </table>`;
@@ -336,11 +336,11 @@ const buildRecommendedSessionBlock = (summary) => {
   }
 
   const detailRows = [
-    ['Focus della seduta', recommendation.focus],
-    ['Struttura', recommendation.structure],
-    ['Intensità', recommendation.intensity],
-    ['Indicazione generale', recommendation.guidance],
-  ].filter(([, value]) => typeof value === 'string' && value.trim().length > 0);
+    ["Focus della seduta", recommendation.focus],
+    ["Struttura", recommendation.structure],
+    ["Intensità", recommendation.intensity],
+    ["Indicazione generale", recommendation.guidance],
+  ].filter(([, value]) => typeof value === "string" && value.trim().length > 0);
 
   return `
 <p class="recommendation-type">
@@ -348,10 +348,10 @@ const buildRecommendedSessionBlock = (summary) => {
 </p>
 
 <p class="subheading">Perché</p>
-${renderBulletList(recommendation.reasons, 'Nessuna motivazione disponibile.')}
+${renderBulletList(recommendation.reasons, "Nessuna motivazione disponibile.")}
 
 <p class="subheading">Priorità</p>
-${renderBulletList(recommendation.priorities, 'Nessuna priorità specifica.')}
+${renderBulletList(recommendation.priorities, "Nessuna priorità specifica.")}
 
 ${
   detailRows.length > 0
@@ -361,7 +361,7 @@ ${
     ${renderKeyValueRows(detailRows)}
   </tbody>
 </table>`
-    : ''
+    : ""
 }`;
 };
 
@@ -390,14 +390,14 @@ const buildExerciseTrendCards = (summary, formatOptions) => {
     <tbody>
       ${renderKeyValueRows([
         [
-          '1RM stimato',
+          "1RM stimato",
           formatEstimatedOneRepMax(trend.currentEstimatedOneRm, formatOptions),
         ],
         [
-          'Seduta precedente',
+          "Seduta precedente",
           formatEstimatedOneRepMax(trend.previousEstimatedOneRm, formatOptions),
         ],
-        ['Variazione', formatSignedPercent(trend.deltaPercent)],
+        ["Variazione", formatSignedPercent(trend.deltaPercent)],
       ])}
     </tbody>
   </table>
@@ -421,7 +421,7 @@ const buildDayRows = (summary, formatOptions) => {
     days.map(
       (day) => `
 <tr>
-  <td>${escapeHtml(new Date(day.date).toLocaleDateString('it-IT'))}</td>
+  <td>${escapeHtml(new Date(day.date).toLocaleDateString("it-IT"))}</td>
   <td>${escapeHtml(day.sessions || 0)}</td>
   <td>${escapeHtml(day.completedSets || 0)}</td>
   <td>${escapeHtml(formatVolume(day.volume || 0, formatOptions))}</td>
@@ -467,9 +467,9 @@ const buildBadgeRows = (summary, formatOptions) => {
       (badge) => `
 <tr>
   <td>${escapeHtml(badge.name)}</td>
-  <td>${escapeHtml(badge.exerciseName || 'Badge generale')}</td>
+  <td>${escapeHtml(badge.exerciseName || "Badge generale")}</td>
   <td>${escapeHtml(
-    formatBadgeValue(badge.value, badge.code, formatOptions) || '-',
+    formatBadgeValue(badge.value, badge.code, formatOptions) || "-",
   )}</td>
   <td>${escapeHtml(formatBadgeDate(badge.earnedAt))}</td>
 </tr>`,
@@ -478,8 +478,8 @@ const buildBadgeRows = (summary, formatOptions) => {
 };
 
 const buildCoachReportHtml = (summary, formatOptions = {}) => {
-  const periodLabel = summary?.period?.label || 'Periodo non disponibile';
-  const isHistoricalReport = summary?.periodStatus === 'HISTORICAL';
+  const periodLabel = summary?.period?.label || "Periodo non disponibile";
+  const isHistoricalReport = summary?.periodStatus === "HISTORICAL";
 
   return `<!doctype html>
 <html>
@@ -723,13 +723,13 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
 export const exportCoachSummaryAsPdf = async (summary, formatOptions = {}) => {
   if (!summary || Number(summary?.totals?.sessions || 0) <= 0) {
     throw new Error(
-      'Non ci sono allenamenti da esportare per il periodo selezionato.',
+      "Non ci sono allenamenti da esportare per il periodo selezionato.",
     );
   }
 
   const html = buildCoachReportHtml(summary, formatOptions);
 
-  if (Platform.OS === 'web') {
+  if (Platform.OS === "web") {
     await Print.printAsync({ html });
     return null;
   }
@@ -742,8 +742,8 @@ export const exportCoachSummaryAsPdf = async (summary, formatOptions = {}) => {
   await FileSystem.copyAsync({ from: uri, to: targetUri });
 
   return shareFile(targetUri, {
-    dialogTitle: 'Condividi report Coach in PDF',
-    mimeType: 'application/pdf',
-    UTI: 'com.adobe.pdf',
+    dialogTitle: "Condividi report Coach in PDF",
+    mimeType: "application/pdf",
+    UTI: "com.adobe.pdf",
   });
 };
