@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import BottomNav from "../components/BottomNav";
 import { logoCompact } from "../constants";
 import { useEffectiveDark, useSettings } from "../context/SettingsContext";
@@ -17,6 +18,7 @@ import CoachRecommendedSessionSection from "../features/coach/components/CoachRe
 import CoachWeeklyPaceSection from "../features/coach/components/CoachWeeklyPaceSection";
 import CoachExerciseTrendsSection from "../features/coach/components/CoachExerciseTrendsSection";
 import CoachHistoricalAnalysisSection from "../features/coach/components/CoachHistoricalAnalysisSection";
+import CoachMuscleCoverageTrigger from "../features/coach/components/CoachMuscleCoverageTrigger";
 import CoachWeekNavigator from "../features/coach/components/CoachWeekNavigator";
 import CoachComparisonCard from "../features/coach/components/CoachComparisonCard";
 import CoachWeekDayStrip from "../features/coach/components/CoachWeekDayStrip";
@@ -160,6 +162,61 @@ export default function CoachScreen({
                   colors={colors}
                   styles={styles}
                 />
+
+                {hasSessions ? (
+                  <View style={styles.workoutCard}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 17,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: colors.accentGreenBg,
+                          borderWidth: 1,
+                          borderColor: colors.accentGreenBorder,
+                        }}
+                      >
+                        <Ionicons
+                          name="body-outline"
+                          size={19}
+                          color={colors.primary}
+                        />
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.sectionTitle}>
+                          Copertura muscolare
+                        </Text>
+
+                        <Text
+                          style={{
+                            color: colors.textMuted,
+                            fontSize: 13,
+                            lineHeight: 18,
+                            marginTop: 3,
+                          }}
+                        >
+                          Vedi serie, volume e stato dei distretti allenati.
+                        </Text>
+                      </View>
+                    </View>
+
+                    <CoachMuscleCoverageTrigger
+                      summary={summary}
+                      colors={colors}
+                      formatOptions={formatOptions}
+                      label="Vedi analisi completa"
+                    />
+                  </View>
+                ) : null}
               </>
             )}
 

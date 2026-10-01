@@ -1,14 +1,11 @@
-import React, { createContext, useContext, useRef, useState } from 'react';
-import { useColorScheme } from 'react-native';
-import {
-  getUserSettings,
-  saveUserSettings,
-} from '../services/api';
+import React, { createContext, useContext, useRef, useState } from "react";
+import { useColorScheme } from "react-native";
+import { getUserSettings, saveUserSettings } from "../services/api";
 
 const DEFAULT_SETTINGS = {
-  weightUnit: 'kg',      // 'kg' | 'lbs'
-  themeMode: 'auto',     // 'light' | 'dark' | 'auto'
-  defaultRestTime: 60,   // seconds
+  weightUnit: "kg", // 'kg' | 'lbs'
+  themeMode: "auto", // 'light' | 'dark' | 'auto'
+  defaultRestTime: 60, // seconds
   showExerciseNotes: true,
   restTimerHaptic: false,
   restTimerSound: false,
@@ -58,7 +55,10 @@ export function SettingsProvider({ children }) {
             }));
           })
           .catch((error) => {
-            console.error('Errore salvataggio impostazioni:', error.message || error);
+            console.error(
+              "Errore salvataggio impostazioni:",
+              error.message || error,
+            );
           });
       }
       return next;
@@ -66,18 +66,24 @@ export function SettingsProvider({ children }) {
   };
 
   // Convert a weight value FROM kg TO display unit
-  const parseWeightValue = (value) => parseFloat(String(value || 0).replace(',', '.')) || 0;
+  const parseWeightValue = (value) =>
+    parseFloat(String(value || 0).replace(",", ".")) || 0;
 
-  const convertWeight = (kgValue) => {
-    if (settings.weightUnit === 'lbs') {
-      return Math.round(parseWeightValue(kgValue) * 2.20462 * 10) / 10;
+  const convertWeight = (kgValue, decimalPlaces = 1) => {
+    const value = parseWeightValue(kgValue);
+
+    if (settings.weightUnit === "lbs") {
+      const factor = 10 ** decimalPlaces;
+
+      return Math.round(value * 2.20462 * factor) / factor;
     }
-    return parseWeightValue(kgValue);
+
+    return value;
   };
 
   // Convert a weight value FROM display unit TO kg (for storage)
   const toKg = (displayValue) => {
-    if (settings.weightUnit === 'lbs') {
+    if (settings.weightUnit === "lbs") {
       return Math.round((parseWeightValue(displayValue) / 2.20462) * 10) / 10;
     }
     return parseWeightValue(displayValue);
@@ -98,7 +104,8 @@ export function SettingsProvider({ children }) {
         convertWeight,
         toKg,
         formatWeight,
-      }}>
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );
@@ -114,7 +121,7 @@ export const useSettings = () => useContext(SettingsContext);
 export function useEffectiveDark() {
   const systemScheme = useColorScheme();
   const { settings } = useSettings();
-  if (settings.themeMode === 'dark') return true;
-  if (settings.themeMode === 'light') return false;
-  return systemScheme === 'dark'; // 'auto'
+  if (settings.themeMode === "dark") return true;
+  if (settings.themeMode === "light") return false;
+  return systemScheme === "dark"; // 'auto'
 }

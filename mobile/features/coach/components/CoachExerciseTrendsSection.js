@@ -1,30 +1,33 @@
-import React, { useMemo } from 'react';
-import { Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { formatSignedPercent, formatWeight } from '../utils/coachFormatter';
+import React, { useMemo } from "react";
+import { Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  formatEstimatedOneRepMax,
+  formatSignedPercent,
+} from "../utils/coachFormatter";
 import {
   getCoachIconBubbleStyle,
   getCoachListRowStyle,
   getCoachMutedTextStyle,
-} from '../styles/coachUi';
+} from "../styles/coachUi";
 
 const MAX_VISIBLE_TRENDS = 3;
 
 function getTrendTheme(status, colors) {
-  if (status === 'IMPROVING') {
+  if (status === "IMPROVING") {
     return {
-      label: 'In crescita',
-      icon: 'trending-up-outline',
+      label: "In crescita",
+      icon: "trending-up-outline",
       color: colors.primary,
       backgroundColor: colors.accentGreenBg,
       borderColor: colors.accentGreenBorder,
     };
   }
 
-  if (status === 'DECLINING') {
+  if (status === "DECLINING") {
     return {
-      label: 'In calo',
-      icon: 'trending-down-outline',
+      label: "In calo",
+      icon: "trending-down-outline",
       color: colors.deleteBtnText,
       backgroundColor: colors.deleteBtnBg,
       borderColor: colors.deleteBtnText,
@@ -32,8 +35,8 @@ function getTrendTheme(status, colors) {
   }
 
   return {
-    label: 'Stabile',
-    icon: 'remove-outline',
+    label: "Stabile",
+    icon: "remove-outline",
     color: colors.textMuted,
     backgroundColor: colors.chipBackground,
     borderColor: colors.border,
@@ -62,8 +65,8 @@ export default function CoachExerciseTrendsSection({
     <View style={styles.workoutCard}>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           gap: 12,
         }}
       >
@@ -83,11 +86,11 @@ export default function CoachExerciseTrendsSection({
       <View style={{ marginTop: 10 }}>
         {trends.map((trend, index) => {
           const theme = getTrendTheme(trend.status, colors);
-          const currentOneRm = formatWeight(
+          const currentOneRm = formatEstimatedOneRepMax(
             trend.currentEstimatedOneRm,
             formatOptions,
           );
-          const previousOneRm = formatWeight(
+          const previousOneRm = formatEstimatedOneRepMax(
             trend.previousEstimatedOneRm,
             formatOptions,
           );
@@ -97,7 +100,7 @@ export default function CoachExerciseTrendsSection({
               key={`${trend.exerciseId ?? trend.exerciseName}-${index}`}
               style={[
                 getCoachListRowStyle(colors, index === trends.length - 1),
-                { alignItems: 'flex-start' },
+                { alignItems: "flex-start" },
               ]}
             >
               <View
@@ -113,8 +116,8 @@ export default function CoachExerciseTrendsSection({
               <View style={{ flex: 1 }}>
                 <View
                   style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
+                    flexDirection: "row",
+                    alignItems: "center",
                     gap: 8,
                   }}
                 >
@@ -124,7 +127,7 @@ export default function CoachExerciseTrendsSection({
                       flex: 1,
                       color: colors.textDark,
                       fontSize: 14,
-                      fontWeight: '700',
+                      fontWeight: "700",
                     }}
                   >
                     {trend.exerciseName}
@@ -134,7 +137,7 @@ export default function CoachExerciseTrendsSection({
                     style={{
                       color: theme.color,
                       fontSize: 12,
-                      fontWeight: '800',
+                      fontWeight: "800",
                     }}
                   >
                     {theme.label}
@@ -155,7 +158,7 @@ export default function CoachExerciseTrendsSection({
                   style={{
                     color: colors.textDark,
                     fontSize: 13,
-                    fontWeight: '600',
+                    fontWeight: "600",
                     marginTop: 8,
                   }}
                 >
@@ -169,8 +172,8 @@ export default function CoachExerciseTrendsSection({
                     marginTop: 2,
                   }}
                 >
-                  Seduta precedente: {previousOneRm} ·{' '}
-                  <Text style={{ color: theme.color, fontWeight: '700' }}>
+                  Seduta precedente: {previousOneRm} ·{" "}
+                  <Text style={{ color: theme.color, fontWeight: "700" }}>
                     {formatSignedPercent(trend.deltaPercent)}
                   </Text>
                 </Text>

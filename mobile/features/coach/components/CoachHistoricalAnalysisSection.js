@@ -1,16 +1,16 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useMemo } from "react";
+import { Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   getCoachIconBubbleStyle,
   getCoachMutedTextStyle,
-} from '../styles/coachUi';
-import CoachMuscleCoverageModal from './CoachMuscleCoverageModal';
+} from "../styles/coachUi";
+import CoachMuscleCoverageTrigger from "./CoachMuscleCoverageTrigger";
 
 function formatSessionCount(value) {
   const count = Number(value || 0);
 
-  return `${count} ${count === 1 ? 'allenamento' : 'allenamenti'}`;
+  return `${count} ${count === 1 ? "allenamento" : "allenamenti"}`;
 }
 
 function getAdherenceContent(adherence) {
@@ -18,36 +18,36 @@ function getAdherenceContent(adherence) {
   const target = Number(adherence?.targetSessions || 0);
   const remaining = Number(adherence?.remainingSessions || 0);
 
-  if (adherence?.status === 'ABOVE_TARGET') {
+  if (adherence?.status === "ABOVE_TARGET") {
     return {
-      title: 'Target superato',
+      title: "Target superato",
       completionLabel: `Hai completato ${formatSessionCount(
         completed,
       )} rispetto al target di ${formatSessionCount(target)}.`,
-      detail: 'Nel periodo hai superato il numero di sedute previsto.',
+      detail: "Nel periodo hai superato il numero di sedute previsto.",
     };
   }
 
-  if (adherence?.status === 'TARGET_REACHED') {
+  if (adherence?.status === "TARGET_REACHED") {
     return {
-      title: 'Target raggiunto',
+      title: "Target raggiunto",
       completionLabel: `Hai completato ${formatSessionCount(
         completed,
       )} su ${formatSessionCount(target)} previsti.`,
-      detail: 'Nel periodo hai raggiunto il numero di sedute programmato.',
+      detail: "Nel periodo hai raggiunto il numero di sedute programmato.",
     };
   }
 
-  if (adherence?.status === 'NOT_STARTED') {
+  if (adherence?.status === "NOT_STARTED") {
     return {
-      title: 'Nessuna seduta registrata',
+      title: "Nessuna seduta registrata",
       completionLabel: `Target del periodo: ${formatSessionCount(target)}.`,
-      detail: 'Nel periodo selezionato non risultano allenamenti completati.',
+      detail: "Nel periodo selezionato non risultano allenamenti completati.",
     };
   }
 
   return {
-    title: 'Target non completato',
+    title: "Target non completato",
     completionLabel: `Hai completato ${formatSessionCount(
       completed,
     )} su ${formatSessionCount(target)} previsti.`,
@@ -56,7 +56,7 @@ function getAdherenceContent(adherence) {
         ? `Nel periodo non sono state completate ${formatSessionCount(
             remaining,
           )} rispetto al target.`
-        : 'Il periodo si è concluso senza ulteriori sedute registrate.',
+        : "Il periodo si è concluso senza ulteriori sedute registrate.",
   };
 }
 
@@ -66,10 +66,10 @@ function getMuscleCoverageSummary(groups) {
     (group) => Number(group.sets || 0) > 0,
   ).length;
   const untrainedGroupCount = items.filter(
-    (group) => group.status === 'none',
+    (group) => group.status === "none",
   ).length;
   const highGroupCount = items.filter(
-    (group) => group.status === 'high',
+    (group) => group.status === "high",
   ).length;
 
   const parts = [`${trainedGroupCount} distretti allenati nel periodo`];
@@ -78,8 +78,8 @@ function getMuscleCoverageSummary(groups) {
     parts.push(
       `${untrainedGroupCount} ${
         untrainedGroupCount === 1
-          ? 'distretto non allenato'
-          : 'distretti non allenati'
+          ? "distretto non allenato"
+          : "distretti non allenati"
       }`,
     );
   }
@@ -88,13 +88,13 @@ function getMuscleCoverageSummary(groups) {
     parts.push(
       `${highGroupCount} ${
         highGroupCount === 1
-          ? 'distretto con volume elevato'
-          : 'distretti con volume elevato'
+          ? "distretto con volume elevato"
+          : "distretti con volume elevato"
       }`,
     );
   }
 
-  return `${parts.join('. ')}.`;
+  return `${parts.join(". ")}.`;
 }
 
 export default function CoachHistoricalAnalysisSection({
@@ -103,14 +103,14 @@ export default function CoachHistoricalAnalysisSection({
   styles,
   formatOptions,
 }) {
-  const [coverageVisible, setCoverageVisible] = useState(false);
   const adherence = summary?.adherence;
+  const hasSessions = Number(summary?.totals?.sessions || 0) > 0;
   const coverageSummary = useMemo(
     () => getMuscleCoverageSummary(summary?.muscleGroups),
     [summary?.muscleGroups],
   );
 
-  if (summary?.periodStatus !== 'HISTORICAL' || !adherence) {
+  if (summary?.periodStatus !== "HISTORICAL" || !adherence) {
     return null;
   }
 
@@ -120,8 +120,8 @@ export default function CoachHistoricalAnalysisSection({
     <View style={styles.workoutCard}>
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
+          flexDirection: "row",
+          alignItems: "center",
           gap: 12,
         }}
       >
@@ -140,7 +140,7 @@ export default function CoachHistoricalAnalysisSection({
             style={{
               color: colors.textDark,
               fontSize: 16,
-              fontWeight: '800',
+              fontWeight: "800",
               marginTop: 3,
             }}
           >
@@ -157,65 +157,38 @@ export default function CoachHistoricalAnalysisSection({
         {content.detail}
       </Text>
 
-      <View
-        style={{
-          marginTop: 16,
-          paddingTop: 14,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-        }}
-      >
-        <Text
-          style={{
-            color: colors.textDark,
-            fontSize: 14,
-            fontWeight: '700',
-          }}
-        >
-          Copertura muscolare
-        </Text>
-
-        <Text style={[getCoachMutedTextStyle(colors), { marginTop: 4 }]}>
-          {coverageSummary}
-        </Text>
-
-        <Pressable
-          onPress={() => setCoverageVisible(true)}
-          style={{
-            marginTop: 12,
-            borderWidth: 1,
-            borderColor: colors.accentGreenBorder,
-            backgroundColor: colors.accentGreenBg,
-            borderRadius: 8,
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-          }}
-        >
-          <Ionicons name="analytics-outline" size={18} color={colors.primary} />
-
-          <Text
+      {hasSessions ? (
+        <>
+          <View
             style={{
-              color: colors.primary,
-              fontSize: 13,
-              fontWeight: '800',
+              marginTop: 16,
+              paddingTop: 14,
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
             }}
           >
-            Vedi copertura muscolare
-          </Text>
-        </Pressable>
-      </View>
+            <Text
+              style={{
+                color: colors.textDark,
+                fontSize: 14,
+                fontWeight: "700",
+              }}
+            >
+              Copertura muscolare
+            </Text>
 
-      <CoachMuscleCoverageModal
-        visible={coverageVisible}
-        onClose={() => setCoverageVisible(false)}
-        summary={summary}
-        colors={colors}
-        formatOptions={formatOptions}
-      />
+            <Text style={[getCoachMutedTextStyle(colors), { marginTop: 4 }]}>
+              {coverageSummary}
+            </Text>
+          </View>
+
+          <CoachMuscleCoverageTrigger
+            summary={summary}
+            colors={colors}
+            formatOptions={formatOptions}
+          />
+        </>
+      ) : null}
     </View>
   );
 }
