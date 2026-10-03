@@ -36,10 +36,22 @@ const escapeHtml = (value = "") =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
+const formatLocalDateKey = (value) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "periodo";
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
 const getCoachReportFileName = (summary) => {
-  const start = summary?.period?.start
-    ? String(summary.period.start).slice(0, 10)
-    : "periodo";
+  const start = formatLocalDateKey(summary?.period?.start);
 
   return `${sanitizeFileName(`coach-report-${start}`)}.pdf`;
 };
@@ -687,10 +699,12 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
       <tbody>${buildDayRows(summary, formatOptions)}</tbody>
     </table>
 
-    <h2>Confronto settimana precedente</h2>
-    <table>
-      <tbody>${buildComparisonRows(summary, formatOptions)}</tbody>
-    </table>
+    <div class="keep-together">
+      <h2>Confronto settimana precedente</h2>
+      <table>
+        <tbody>${buildComparisonRows(summary, formatOptions)}</tbody>
+      </table>
+    </div>
 
     <h2>Copertura muscolare</h2>
     <table>

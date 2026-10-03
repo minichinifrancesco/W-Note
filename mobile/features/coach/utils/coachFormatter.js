@@ -52,14 +52,22 @@ export function formatSignedDuration(seconds = 0) {
   return `${prefix}${minutes}m`;
 }
 
+const CALENDAR_DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+function getCalendarDayTimestamp(date) {
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 export function formatLastTrainedAt(value) {
   if (!value) return "Mai allenato";
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Data non disponibile";
 
-  const diffMs = Date.now() - date.getTime();
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const today = new Date();
+  const days =
+    (getCalendarDayTimestamp(today) - getCalendarDayTimestamp(date)) /
+    CALENDAR_DAY_IN_MS;
 
   if (days <= 0) return "Oggi";
   if (days === 1) return "Ieri";
