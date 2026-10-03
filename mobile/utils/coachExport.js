@@ -13,6 +13,7 @@ import {
   formatSignedVolume,
   formatVolume,
   formatEstimatedOneRepMax,
+  formatVolumeComparisonPercent,
 } from "../features/coach/utils/coachFormatter";
 
 const sanitizeFileName = (value = "coach-report") => {
@@ -274,7 +275,10 @@ const buildComparisonRows = (summary, formatOptions) => {
     ["Volume", formatSignedVolume(comparison.volumeDelta || 0, formatOptions)],
     [
       "Variazione volume",
-      formatSignedPercent(comparison.volumeDeltaPercent || 0),
+      formatVolumeComparisonPercent(
+        comparison.volumeDeltaPercent,
+        comparison.volumeDelta,
+      ),
     ],
   ]);
 };

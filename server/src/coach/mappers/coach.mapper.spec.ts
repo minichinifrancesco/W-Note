@@ -277,30 +277,53 @@ describe('coach.mapper', () => {
       });
     });
 
-    it('uses 100 percent when previous volume is zero and current volume is positive', () => {
-      expect(
-        toComparisonDto(
-          {
-            sessions: 1,
-            durationSeconds: 1800,
-            completedSets: 6,
-            volume: 500,
-            averageDurationSeconds: 1800,
-          },
-          {
-            sessions: 0,
-            durationSeconds: 0,
-            completedSets: 0,
-            volume: 0,
-            averageDurationSeconds: 0,
-          },
-        ),
-      ).toEqual(
-        expect.objectContaining({
-          volumeDelta: 500,
-          volumeDeltaPercent: 100,
-        }),
+    it('returns a null volume percentage when the previous volume is zero', () => {
+      const result = toComparisonDto(
+        {
+          sessions: 1,
+          durationSeconds: 1800,
+          completedSets: 6,
+          volume: 500,
+          averageDurationSeconds: 1800,
+        },
+        {
+          sessions: 0,
+          durationSeconds: 0,
+          completedSets: 0,
+          volume: 0,
+          averageDurationSeconds: 0,
+        },
       );
+
+      expect(result.volumeDelta).toBe(500);
+      expect(result.volumeDeltaPercent).toBeNull();
+    });
+
+    it('returns a null volume percentage when both weekly volumes are zero', () => {
+      const result = toComparisonDto(
+        {
+          sessions: 0,
+          durationSeconds: 0,
+          completedSets: 0,
+          volume: 0,
+          averageDurationSeconds: 0,
+        },
+        {
+          sessions: 0,
+          durationSeconds: 0,
+          completedSets: 0,
+          volume: 0,
+          averageDurationSeconds: 0,
+        },
+      );
+
+      expect(result).toEqual({
+        sessionsDelta: 0,
+        durationSecondsDelta: 0,
+        completedSetsDelta: 0,
+        volumeDelta: 0,
+        volumeDeltaPercent: null,
+      });
     });
   });
 });

@@ -106,5 +106,5 @@ export class CoachComparisonDto {
   durationSecondsDelta!: number;
   completedSetsDelta!: number;
   volumeDelta!: number;
-  volumeDeltaPercent!: number;
+  volumeDeltaPercent!: number | null;
 }

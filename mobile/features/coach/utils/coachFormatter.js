@@ -29,6 +29,16 @@ export function formatSignedPercent(value = 0) {
   return `${formatted}%`;
 }
 
+export function formatVolumeComparisonPercent(percent, volumeDelta = 0) {
+  if (typeof percent === "number" && Number.isFinite(percent)) {
+    return formatSignedPercent(percent);
+  }
+
+  return Number(volumeDelta) > 0
+    ? "Nuovo volume"
+    : "Nessun confronto disponibile";
+}
+
 export function formatSignedDuration(seconds = 0) {
   const value = Number(seconds || 0);
   const absSeconds = Math.abs(value);

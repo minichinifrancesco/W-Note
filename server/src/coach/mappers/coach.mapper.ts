@@ -137,9 +137,7 @@ export function toComparisonDto(
     volumeDeltaPercent:
       previousTotals.volume > 0
         ? Math.round((volumeDelta / previousTotals.volume) * 1000) / 10
-        : totals.volume > 0
-          ? 100
-          : 0,
+        : null,
   };
 }
 
