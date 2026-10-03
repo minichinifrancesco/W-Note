@@ -59,7 +59,7 @@ function getCalendarDayTimestamp(date) {
 }
 
 export function formatLastTrainedAt(value) {
-  if (!value) return "Mai allenato";
+  if (!value) return "Mai registrata";
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Data non disponibile";
@@ -73,22 +73,6 @@ export function formatLastTrainedAt(value) {
   if (days === 1) return "Ieri";
 
   return `${days} giorni fa`;
-}
-
-export function formatSetCount(value = 0) {
-  const count = Number(value || 0);
-
-  if (count === 1) return "1 serie";
-
-  return `${count} serie`;
-}
-
-export function formatExerciseCount(value = 0) {
-  const count = Number(value || 0);
-
-  if (count === 1) return "1 esercizio";
-
-  return `${count} esercizi`;
 }
 
 function convertDisplayWeight(value = 0, options = {}, decimalPlaces) {

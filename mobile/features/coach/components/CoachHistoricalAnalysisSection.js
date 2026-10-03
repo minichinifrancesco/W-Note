@@ -72,15 +72,15 @@ function getMuscleCoverageSummary(groups) {
     (group) => group.status === "high",
   ).length;
 
-  const parts = [`${trainedGroupCount} distretti allenati nel periodo`];
+  const parts = [
+    `${trainedGroupCount} distretti con serie dirette nel periodo`,
+  ];
 
   if (untrainedGroupCount > 0) {
     parts.push(
       `${untrainedGroupCount} ${
-        untrainedGroupCount === 1
-          ? "distretto non allenato"
-          : "distretti non allenati"
-      }`,
+        untrainedGroupCount === 1 ? "distretto" : "distretti"
+      } senza serie dirette`,
     );
   }
 

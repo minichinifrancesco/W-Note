@@ -99,7 +99,7 @@ const renderBulletList = (items, emptyMessage) => {
 };
 
 const getStatusLabel = (status) => {
-  if (status === "none") return "Non allenato";
+  if (status === "none") return "Nessuna serie diretta";
   if (status === "low") return "Poco allenato";
   if (status === "ok") return "In equilibrio";
   if (status === "high") return "Molto allenato";
@@ -712,9 +712,9 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
         <tr>
           <th>Gruppo</th>
           <th>Stato</th>
-          <th>Serie</th>
-          <th>Volume</th>
-          <th>Ultima volta</th>
+          <th>Serie dirette</th>
+          <th>Volume diretto</th>
+          <th>Ultima serie diretta</th>
         </tr>
       </thead>
       <tbody>${buildMuscleGroupRows(summary, formatOptions)}</tbody>
