@@ -366,8 +366,10 @@ const buildRecommendedSessionBlock = (summary) => {
 <p class="subheading">Perché</p>
 ${renderBulletList(recommendation.reasons, "Nessuna motivazione disponibile.")}
 
-<p class="subheading">Priorità</p>
-${renderBulletList(recommendation.priorities, "Nessuna priorità specifica.")}
+<div class="recommendation-priorities">
+  <p class="subheading">Priorità</p>
+  ${renderBulletList(recommendation.priorities, "Nessuna priorità specifica.")}
+</div>
 
 ${
   detailRows.length > 0
@@ -496,6 +498,8 @@ const buildBadgeRows = (summary, formatOptions) => {
 const buildCoachReportHtml = (summary, formatOptions = {}) => {
   const periodLabel = summary?.period?.label || "Periodo non disponibile";
   const isHistoricalReport = summary?.periodStatus === "HISTORICAL";
+  const recommendedSessionTitle =
+    summary?.recommendedSession?.title || "Prossima seduta consigliata";
 
   return `<!doctype html>
 <html>
@@ -538,6 +542,11 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
         font-size: 14px;
         font-weight: 700;
         margin: 16px 0 4px;
+      }
+
+      .recommendation-priorities {
+        break-inside: avoid;
+        page-break-inside: avoid;
       }
 
       .recommendation-type {
@@ -679,7 +688,7 @@ const buildCoachReportHtml = (summary, formatOptions = {}) => {
     <h2>Ritmo settimanale</h2>
     ${buildWeeklyPaceBlock(summary)}
 
-    <h2>Prossima seduta consigliata</h2>
+    <h2>${escapeHtml(recommendedSessionTitle)}</h2>
     ${buildRecommendedSessionBlock(summary)}`
     }
 

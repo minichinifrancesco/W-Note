@@ -192,6 +192,7 @@ describe('CoachService', () => {
       expect.objectContaining({
         title: 'Prossima seduta consigliata',
         sessionType: 'Upper body ipertrofia compatta',
+        recommendationMode: 'STANDARD',
         priorities: [
           'Panca piana: progressione graduale',
           'Schiena',
@@ -456,6 +457,134 @@ describe('CoachService', () => {
       expect.stringContaining('sotto il ritmo previsto'),
     );
 
+    expect(result.exerciseTrends).toEqual([
+      expect.objectContaining({
+        exerciseName: 'Panca piana',
+        status: 'IMPROVING',
+      }),
+    ]);
+
+    expect(recommendedSession.priorities).not.toContain(
+      'Panca piana: progressione graduale',
+    );
+  });
+
+  it('returns an optional balancing recommendation after the weekly target is reached', async () => {
+    repository.getCoachProfile.mockResolvedValue({
+      trainingGoal: 'FORZA',
+      trainingLevel: 'AVANZATO',
+      targetWorkoutDays: 3,
+    });
+
+    repository.getWorkoutTotals
+      .mockResolvedValueOnce([
+        {
+          sessions: 3,
+          durationSeconds: 3600,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          sessions: 0,
+          durationSeconds: 0,
+        },
+      ]);
+
+    repository.getSetTotals
+      .mockResolvedValueOnce([
+        {
+          completedSets: 20,
+          volume: 5000,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          completedSets: 0,
+          volume: 0,
+        },
+      ]);
+
+    repository.getMuscleGroups.mockResolvedValue([
+      {
+        name: 'Petto',
+        sets: 6,
+        volume: 1500,
+        exerciseCount: 1,
+        lastTrainedAt: new Date('2026-09-18T10:00:00.000Z'),
+      },
+      {
+        name: 'Schiena',
+        sets: 6,
+        volume: 1600,
+        exerciseCount: 1,
+        lastTrainedAt: new Date('2026-09-18T10:00:00.000Z'),
+      },
+      {
+        name: 'Gambe e glutei',
+        sets: 8,
+        volume: 1900,
+        exerciseCount: 1,
+        lastTrainedAt: new Date('2026-09-19T10:00:00.000Z'),
+      },
+      {
+        name: 'Bicipiti',
+        sets: 0,
+        volume: 0,
+        exerciseCount: 0,
+        lastTrainedAt: null,
+      },
+    ]);
+
+    repository.getLastTrainedMuscleGroups.mockResolvedValue([]);
+    repository.getWorkoutDays.mockResolvedValue([]);
+    repository.getSetDays.mockResolvedValue([]);
+    repository.getBadges.mockResolvedValue([]);
+
+    repository.getExercisePerformanceSets.mockResolvedValue([
+      {
+        workoutId: 100,
+        performedAt: new Date('2026-08-24T10:00:00.000Z'),
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        trackingType: 'WEIGHT_REPS',
+        load: 100,
+        reps: 5,
+      },
+      {
+        workoutId: 101,
+        performedAt: new Date('2026-09-14T10:00:00.000Z'),
+        exerciseId: 10,
+        exerciseName: 'Panca piana',
+        muscleGroup: 'Petto',
+        trackingType: 'WEIGHT_REPS',
+        load: 105,
+        reps: 5,
+      },
+    ]);
+
+    const result = await service.getWeeklySummary(
+      {
+        userId: 42,
+        email: 'utente@example.com',
+      },
+      '2026-09-14',
+    );
+
+    const recommendedSession = result.recommendedSession;
+
+    expect(recommendedSession).not.toBeNull();
+
+    if (!recommendedSession) {
+      throw new Error(
+        'Una settimana corrente deve contenere una seduta consigliata',
+      );
+    }
+
+    expect(recommendedSession.recommendationMode).toBe('OPTIONAL_BALANCING');
+    expect(recommendedSession.title).toBe('Richiamo opzionale');
+    expect(recommendedSession.sessionType).toBe('Seduta tecnica facoltativa');
+    expect(recommendedSession.priorities).toContain('Bicipiti');
     expect(result.exerciseTrends).toEqual([
       expect.objectContaining({
         exerciseName: 'Panca piana',

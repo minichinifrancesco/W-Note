@@ -6,6 +6,10 @@ import type { CoachExerciseTrendStatus } from '../rules/coachExerciseTrend.rules
 import type { CoachPeriodStatus } from '../utils/coachPeriod.util';
 
 export type CoachMuscleGroupStatus = 'none' | 'low' | 'ok' | 'high';
+export type CoachRecommendationMode =
+  | 'STANDARD'
+  | 'OPTIONAL_BALANCING'
+  | 'RECOVERY';
 
 export class CoachTotalsDto {
   sessions!: number;
@@ -56,6 +60,7 @@ export class CoachExerciseTrendDto {
 export class CoachRecommendedSessionDto {
   title!: string;
   sessionType!: string;
+  recommendationMode!: CoachRecommendationMode;
   reasons!: string[];
   priorities!: string[];
   guidance!: string;

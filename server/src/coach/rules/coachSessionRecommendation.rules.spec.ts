@@ -54,6 +54,7 @@ describe('buildCoachSessionRecommendation', () => {
 
     expect(result.weeklyProgress.status).toBe('IN_PROGRESS');
     expect(result.sessionType).toBe('Recupero e mobilità');
+    expect(result.recommendationMode).toBe('RECOVERY');
     expect(result.priorities).toEqual([
       'Mobilità',
       'Camminata leggera',
@@ -417,9 +418,10 @@ describe('buildCoachSessionRecommendation', () => {
     expect(result.weeklyProgress.status).toBe('TARGET_REACHED');
     expect(result.sessionType).toBe('Recupero e mobilità');
     expect(result.focus).toContain('Recupero generale');
+    expect(result.recommendationMode).toBe('RECOVERY');
   });
 
-  it('keeps a targeted recommendation when target is reached but work is unbalanced', () => {
+  it('returns an optional balancing recommendation when the target is reached with direct-coverage priorities', () => {
     const result = buildCoachSessionRecommendation({
       profile: {
         trainingGoal: 'MASSA',
@@ -434,8 +436,17 @@ describe('buildCoachSessionRecommendation', () => {
     });
 
     expect(result.weeklyProgress.status).toBe('TARGET_REACHED');
-    expect(result.sessionType).not.toBe('Recupero e mobilità');
+    expect(result.recommendationMode).toBe('OPTIONAL_BALANCING');
+    expect(result.title).toBe('Richiamo opzionale');
+    expect(result.sessionType).toBe('Seduta tecnica facoltativa');
     expect(result.priorities).toContain('Schiena');
+    expect(result.focus).toContain('Hai già raggiunto il target settimanale');
+    expect(result.structure).toContain(
+      'nessun obbligo di aggiungere ulteriori sedute',
+    );
+    expect(result.reasons).toContain(
+      'Questo richiamo è facoltativo: non serve aggiungere una seduta per rispettare il target settimanale.',
+    );
   });
 
   it('recommends recovery above the weekly target', () => {
@@ -452,6 +463,7 @@ describe('buildCoachSessionRecommendation', () => {
     expect(result.weeklyProgress.status).toBe('ABOVE_TARGET');
     expect(result.sessionType).toBe('Recupero e mobilità');
     expect(result.intensity).toContain('sforzo leggero');
+    expect(result.recommendationMode).toBe('RECOVERY');
   });
 
   it('does not infer balanced work when target is reached without completed sets', () => {
@@ -473,6 +485,7 @@ describe('buildCoachSessionRecommendation', () => {
     expect(result.weeklyProgress.status).toBe('TARGET_REACHED');
     expect(result.sessionType).not.toBe('Recupero e mobilità');
     expect(result.reasons[1]).toContain('serie completate');
+    expect(result.recommendationMode).toBe('STANDARD');
   });
 });
 

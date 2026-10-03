@@ -183,7 +183,7 @@ export class CoachService {
     );
 
     const isRecoverySession =
-      sessionRecommendation.sessionType === 'Recupero e mobilità';
+      sessionRecommendation.recommendationMode === 'RECOVERY';
 
     const weeklyPaceReason = isRecoverySession
       ? null

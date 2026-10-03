@@ -143,6 +143,10 @@ export function adaptSessionRecommendationToExerciseTrends(
   trends: CoachExerciseTrend[],
   profile: CoachProfile,
 ): CoachRecommendedSessionDto {
+  if (recommendation.recommendationMode !== 'STANDARD') {
+    return recommendation;
+  }
+
   const selectedTrend = selectRelevantTrend(
     trends,
     profile,

@@ -5,6 +5,7 @@ import { adaptSessionRecommendationToExerciseTrends } from './coachExerciseTrend
 const baseRecommendation: CoachRecommendedSessionDto = {
   title: 'Prossima seduta consigliata',
   sessionType: 'Seduta di forza',
+  recommendationMode: 'STANDARD',
   reasons: ['Hai completato 2 allenamenti su 5: ne restano 3.'],
   priorities: ['Petto'],
   guidance: 'Gestisci volume, intensità e recuperi.',
@@ -188,6 +189,7 @@ describe('adaptSessionRecommendationToExerciseTrends', () => {
     const recoveryRecommendation = {
       ...baseRecommendation,
       sessionType: 'Recupero e mobilità',
+      recommendationMode: 'RECOVERY' as const,
     };
     const result = adaptSessionRecommendationToExerciseTrends(
       recoveryRecommendation,
@@ -196,5 +198,22 @@ describe('adaptSessionRecommendationToExerciseTrends', () => {
     );
 
     expect(result).toBe(recoveryRecommendation);
+  });
+
+  it('does not add trend adjustments to an optional balancing recommendation', () => {
+    const optionalRecommendation = {
+      ...baseRecommendation,
+      title: 'Richiamo opzionale',
+      sessionType: 'Seduta tecnica facoltativa',
+      recommendationMode: 'OPTIONAL_BALANCING' as const,
+    };
+
+    const result = adaptSessionRecommendationToExerciseTrends(
+      optionalRecommendation,
+      [trend({ status: 'DECLINING' })],
+      advancedStrengthProfile,
+    );
+
+    expect(result).toBe(optionalRecommendation);
   });
 });

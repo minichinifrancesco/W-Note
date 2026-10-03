@@ -61,6 +61,18 @@ const VOLUME_SATURATION_REASONS = [
   'Aggiungere un’altra seduta intensa ora ridurrebbe la qualità del recupero.',
 ];
 
+const OPTIONAL_BALANCING_GUIDANCE =
+  'Questo richiamo è facoltativo: il target settimanale è già raggiunto. Se non sei recuperato, riprendi direttamente la prossima settimana.';
+
+const OPTIONAL_BALANCING_OPENING =
+  'Hai già raggiunto il target settimanale. Se ti senti recuperato e desideri allenarti ancora, limita il lavoro ai gruppi meno coperti.';
+
+const OPTIONAL_BALANCING_STRUCTURE =
+  'Mantieni il volume basso: scegli 1-2 esercizi mirati, poche serie di qualità e nessun obbligo di aggiungere ulteriori sedute questa settimana.';
+
+const OPTIONAL_BALANCING_INTENSITY =
+  'Usa carichi leggeri o moderati, conserva ampio margine e interrompi la seduta se il recupero non è completo.';
+
 function getLastTrainedScore(value: string | null): number {
   if (!value) {
     return Number.NEGATIVE_INFINITY;
@@ -446,27 +458,56 @@ export function buildCoachSessionRecommendation({
     priorityGroups,
     isVolumeSaturated,
   );
-  const sessionType =
+  const baseSessionType =
     recoverySessionType ??
     (hasRecommendationData
       ? getSessionType(profile, priorityGroups)
       : getInitialSessionType(profile));
-  const isRecoverySession = sessionType === 'Recupero e mobilità';
+  const isRecoverySession = baseSessionType === 'Recupero e mobilità';
+  const isOptionalBalancing =
+    weeklyProgress.status === 'TARGET_REACHED' &&
+    hasMuscleData &&
+    priorityGroups.length > 0 &&
+    !isVolumeSaturated;
+  const recommendationMode = isRecoverySession
+    ? 'RECOVERY'
+    : isOptionalBalancing
+      ? 'OPTIONAL_BALANCING'
+      : 'STANDARD';
+  const sessionType = isOptionalBalancing
+    ? 'Seduta tecnica facoltativa'
+    : baseSessionType;
   const focus = isVolumeSaturated
     ? VOLUME_SATURATION_FOCUS
     : isRecoverySession
       ? 'Recupero generale, mobilità e preparazione alla prossima settimana.'
-      : getSessionFocus(sessionType, priorityGroups, hasRecommendationData);
+      : isOptionalBalancing
+        ? `${OPTIONAL_BALANCING_OPENING} ${getSessionFocus(
+            baseSessionType,
+            priorityGroups,
+            hasRecommendationData,
+          )}`
+        : getSessionFocus(
+            baseSessionType,
+            priorityGroups,
+            hasRecommendationData,
+          );
 
-  const structure = isRecoverySession
+  const structure = isVolumeSaturated
     ? 'Dedica la seduta a mobilità, respirazione e attività leggera, senza aggiungere volume allenante.'
-    : getSessionStructure(profile);
+    : isRecoverySession
+      ? 'Scegli mobilità, camminata leggera o tecnica senza carico.'
+      : isOptionalBalancing
+        ? OPTIONAL_BALANCING_STRUCTURE
+        : getSessionStructure(profile);
 
   const intensity = isVolumeSaturated
     ? 'Sforzo leggero. Non aggiungere volume allenante.'
     : isRecoverySession
       ? 'Mantieni uno sforzo leggero e interrompi qualsiasi attività che aumenti affaticamento o dolore.'
-      : getSessionIntensity(profile);
+      : isOptionalBalancing
+        ? OPTIONAL_BALANCING_INTENSITY
+        : getSessionIntensity(profile);
 
   const completedWorkoutLabel =
     weeklyProgress.completedSessions === 1 ? 'allenamento' : 'allenamenti';
@@ -497,6 +538,12 @@ export function buildCoachSessionRecommendation({
       );
     }
 
+    if (isOptionalBalancing) {
+      reasons.push(
+        'Questo richiamo è facoltativo: non serve aggiungere una seduta per rispettare il target settimanale.',
+      );
+    }
+
     if (!hasCompletedSessions && priorityNames.length > 0) {
       reasons.push(
         `Non hai ancora registrato sedute questa settimana. Lo storico indica come priorità: ${priorityNames.join(', ')}.`,
@@ -521,13 +568,18 @@ export function buildCoachSessionRecommendation({
   }
 
   return {
-    title: 'Prossima seduta consigliata',
+    title: isOptionalBalancing
+      ? 'Richiamo opzionale'
+      : 'Prossima seduta consigliata',
     sessionType,
+    recommendationMode,
     reasons,
     priorities: recommendationPriorities,
     guidance: isVolumeSaturated
       ? 'Oggi la priorità è recuperare, non aggiungere nuovo volume.'
-      : getGuidance(profile),
+      : isOptionalBalancing
+        ? OPTIONAL_BALANCING_GUIDANCE
+        : getGuidance(profile),
     focus,
     structure,
     intensity,
